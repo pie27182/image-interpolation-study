@@ -22,8 +22,10 @@ quality and runtime under clearly stated experimental conditions.
 | Lanczos-3 | Windowed sinc, radius 3 | Retains detail well; can create ringing around sharp transitions |
 
 Implementation conventions and equations are described in
-[`docs/algorithm-notes.md`](docs/algorithm-notes.md). Research references are in
-[`docs/research-sources.md`](docs/research-sources.md).
+[`docs/algorithm-notes.md`](docs/algorithm-notes.md). A broader, thesis-oriented
+mathematical treatment is available in
+[`docs/theoretical-foundations.md`](docs/theoretical-foundations.md). Research
+references are in [`docs/research-sources.md`](docs/research-sources.md).
 
 ## Project layout
 
