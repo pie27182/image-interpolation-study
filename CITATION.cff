@@ -1,7 +1,7 @@
 cff-version: 1.2.0
 message: "If you use this project in academic work, please cite it and its algorithm references."
 title: "Comparative Analysis of Digital Image Interpolation Algorithms Using Python"
-version: 0.1.0
+version: 0.2.0
 year: 2026
 type: software
 license: MIT

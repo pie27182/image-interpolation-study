@@ -1,23 +1,23 @@
 [build-system]
-requires = ["setuptools>=68", "wheel"]
+requires = ["setuptools>=68"]
 build-backend = "setuptools.build_meta"
 
 [project]
 name = "image-interpolation-study"
-version = "0.1.0"
-description = "A comparative study of image interpolation: Pillow baselines and NumPy implementations from first principles."
+version = "0.2.0"
+description = "A research project implementing classical image interpolation from mathematical first principles."
 readme = "README.md"
 requires-python = ">=3.10"
 license = { text = "MIT" }
 authors = [{ name = "Image Interpolation Study" }]
 dependencies = [
   "numpy>=1.24",
-  "Pillow>=10.0",
-  "scikit-image>=0.22",
+  "Pillow>=10.0",  # image file I/O and optional library baseline only
 ]
 
 [project.optional-dependencies]
 dev = ["pytest>=8.0", "ruff>=0.5"]
+plots = ["matplotlib>=3.8"]
 
 [project.scripts]
 image-interpolation = "interpolation_study.cli:main"

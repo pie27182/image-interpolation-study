@@ -1,4 +1,4 @@
-"""Generate deterministic synthetic images for a first benchmark run."""
+"""Generate deterministic synthetic images for interpolation experiments."""
 
 from pathlib import Path
 
@@ -9,9 +9,9 @@ from PIL import Image
 def main() -> None:
     output = Path(__file__).resolve().parent
     size = 512
-    y, x = np.mgrid[0:size, 0:size]
+    y, x = np.mgrid[:size, :size]
 
-    gradient = np.zeros((size, size, 3), dtype=np.uint8)
+    gradient = np.empty((size, size, 3), dtype=np.uint8)
     gradient[..., 0] = np.rint(x * 255 / (size - 1)).astype(np.uint8)
     gradient[..., 1] = np.rint(y * 255 / (size - 1)).astype(np.uint8)
     gradient[..., 2] = 128
@@ -19,11 +19,23 @@ def main() -> None:
 
     tile = 16
     checker = (((x // tile + y // tile) % 2) * 255).astype(np.uint8)
-    patterns = np.repeat(checker[..., None], 3, axis=2)
-    patterns[220:292, 220:292] = 255
-    patterns[236:276, 236:276] = 0
-    Image.fromarray(patterns).save(output / "synthetic_edges.png")
-    print(f"Generated synthetic_gradient.png and synthetic_edges.png in {output}")
+    edges = np.repeat(checker[..., None], 3, axis=2)
+    edges[220:292, 220:292] = 255
+    edges[236:276, 236:276] = 0
+    Image.fromarray(edges).save(output / "synthetic_edges.png")
+
+    impulse = np.zeros((size, size), dtype=np.uint8)
+    impulse[size // 2, size // 2] = 255
+    Image.fromarray(impulse).save(output / "synthetic_impulse.png")
+
+    slanted = np.where(x - 0.37 * y > size * 0.28, 255, 0).astype(np.uint8)
+    Image.fromarray(slanted).save(output / "synthetic_slanted_edge.png")
+
+    grating = (127.5 + 127.5 * np.sin(2.0 * np.pi * x / 7.0)).clip(0, 255).astype(np.uint8)
+    grating_rgb = np.repeat(grating[..., None], 3, axis=2)
+    Image.fromarray(grating_rgb).save(output / "synthetic_grating.png")
+
+    print(f"Generated five deterministic test images in {output}")
 
 
 if __name__ == "__main__":

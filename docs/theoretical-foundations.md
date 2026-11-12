@@ -391,12 +391,12 @@ when the dimensions make this expression meaningful. These conventions differ, p
 A kernel near an image border requests samples outside the finite array. The algorithm must decide how the image is extended. Common policies are:
 
 - **Clamp/nearest:** repeat the first or last sample.
-- **Reflect:** mirror about the edge boundary (half-sample symmetric).
-- **Mirror:** mirror about the edge pixel centre (whole-sample symmetric).
+- **Half-sample symmetric reflection:** repeat the edge sample at the reflection boundary.
+- **Whole-sample symmetric reflection:** reflect about the centre of the edge sample without repeating it.
 - **Wrap:** use periodic extension.
 - **Constant:** extend with a specified fill value.
 
-These are not equivalent. They can affect border pixels and, for small images or wide kernels, a large fraction of the result. SciPy documents the precise differences between `reflect`, `mirror`, `nearest`, `wrap`, and constant modes.
+The words `reflect` and `mirror` are not used consistently across libraries. SciPy calls half-sample symmetry `reflect` and whole-sample symmetry `mirror`; OpenCV's `BORDER_REFLECT_101` follows whole-sample symmetry. This project's public option `boundary="reflect"` means whole-sample symmetric reflection, where index `-1` maps to source index `1`. It therefore corresponds to SciPy `mirror` and OpenCV `BORDER_REFLECT_101`, not SciPy `reflect`. Always compare the explicit index mapping, not just the mode name.
 
 ### 7.3 Kernel support, dilation, and normalization
 
@@ -417,6 +417,14 @@ Computing every weighted sum in 8-bit integer arithmetic is unsafe because inter
 sRGB values are gamma-encoded, not proportional to physical light. The ICC registry gives the piecewise sRGB transfer function. For physically meaningful averaging, filtering should ideally be done after decoding sRGB to linear-light RGB, followed by re-encoding to sRGB. Filtering encoded values directly can produce different brightness around edges and gradients. To isolate interpolation mathematics, a thesis should either use linear-light data or clearly declare that it compares the libraries' standard encoded-channel behaviour.
 
 For images with transparency, filtering non-premultiplied RGB can create coloured fringes around transparent pixels. A robust pipeline generally premultiplies colour by alpha, filters premultiplied channels and alpha consistently, then un-premultiplies where alpha is nonzero.
+
+### 7.6 Library names are not complete mathematical specifications
+
+The source code makes the ambiguity concrete. Pillow's current `Resample.c` defines its bicubic cubic-convolution parameter as `a = -0.5` and its Lanczos filter with support radius 3. OpenCV's current 4.x `resize.cpp` defines its cubic parameter `A = -0.75`; its `INTER_LANCZOS4` implementation builds eight coefficients per axis, corresponding to an 8×8 source neighbourhood in two dimensions. OpenCV's API documentation likewise describes `INTER_CUBIC` as a 4×4 neighbourhood and `INTER_LANCZOS4` as an 8×8 neighbourhood.
+
+These are related filter families, but they are not numerically identical. The cubic parameter changes the shape and frequency response of the kernel. The Lanczos radius changes the window/support and the number of contributing samples. Coordinate mapping, boundary policy, coefficient quantization, and output rounding can introduce further differences. Therefore a result from `PIL.Image.Resampling.BICUBIC` should not be expected to equal `cv2.INTER_CUBIC`, even when the input and output dimensions match.
+
+For a controlled mathematical comparison, implement one explicitly stated formula in the independent code and compare it against a reference implementation only after verifying that the reference uses the same parameter. For a practical library comparison, do not force different presets into a false claim of algorithmic equivalence: compare the end-to-end results and document the exact library version.
 
 ## 8. Adaptive and edge-directed interpolation
 
@@ -522,16 +530,32 @@ A strong comparative thesis could be structured around the following questions:
 4. How do image class and degradation process change the ranking under MSE, PSNR, SSIM, and visual inspection?
 5. What quality/runtime trade-offs are observed for Python/NumPy implementations compared with optimized native-library routines?
 
-Recommended extensions beyond the current four-method implementation are:
+The current from-scratch implementation goes beyond the initial four-method
+baseline. It includes nearest, bilinear, Keys bicubic, Mitchell--Netravali,
+coefficient-prefiltered cubic B-spline, Lanczos-3, and exact area resampling.
+It also makes coordinate mode and boundary extension configurable, and
+implements MSE, PSNR and a documented uniform-window SSIM variant directly
+with NumPy. The detailed equations and implementation choices are in
+[`implementation-from-scratch.md`](implementation-from-scratch.md).
 
-- Add an **area/box** downscaler to study pixel-footprint integration.
-- Add a true **cubic B-spline interpolator** with coefficient prefiltering, keeping it separate from Keys bicubic.
-- Optionally add **Mitchell–Netravali** with explicit \((B,C)\) values.
-- Treat **edge-directed interpolation** as an advanced extension rather than mixing it into the fixed-kernel comparison.
-- Separate upscaling, downscaling, and arbitrary warping experiments.
-- Add diagnostics for kernel plots, frequency response, impulse response, step-edge response, constant preservation, linear-ramp reproduction, and border behaviour.
+Further research extensions could include:
 
-These additions would make the project more theoretically meaningful and would prevent the common mistake of comparing methods that share a label but not a mathematical definition.
+- **Edge-directed interpolation** such as NEDI, treated separately from fixed
+  linear kernels.
+- **EWA resampling** for arbitrary affine/projective warps with an elliptical
+  source footprint.
+- **Linear-light colour and premultiplied-alpha filtering** as explicit
+  experimental modes.
+- **Polyphase or recursive implementations** for performance comparisons.
+- **Learned super-resolution** as a distinct comparison category, not as a
+  classical interpolation kernel.
+- Diagnostics for kernel plots, frequency response, impulse response,
+  step-edge response, constant preservation, linear-ramp reproduction and
+  boundary behaviour.
+
+These extensions should be added as separately defined experiments so that a
+fixed-kernel comparison does not conflate fundamentally different problem
+classes.
 
 ## 12. Selected bibliography and online resources
 
@@ -556,3 +580,18 @@ The following sources range from mathematical foundations to original algorithm 
 ## 13. Search and citation notes
 
 This chapter synthesizes the linked papers and documentation for study. It is not a replacement for reading and citing the original publication. For a formal thesis, cite the original paper or standard where the claim originates, verify its exact publication metadata, and use a consistent citation style required by the university. Library documentation is appropriate when describing what a particular software implementation does; it is not a substitute for the mathematical source of an algorithm.
+
+### Additional implementation-source references
+
+- **Pillow**, [C resampling implementation](https://github.com/python-pillow/Pillow/blob/main/src/libImaging/Resample.c). Source for the bicubic parameter `a = -0.5` and Lanczos support radius 3.
+- **OpenCV**, [4.x resize implementation](https://github.com/opencv/opencv/blob/4.x/modules/imgproc/src/resize.cpp). Source for the cubic parameter `A = -0.75` and the Lanczos4 coefficient construction.
+
+## 14. Companion implementation chapter
+
+The complete equations used by the current Python implementation, including
+the Keys and Mitchell cubic kernels, cubic B-spline coefficient prefilter,
+Lanczos window, area-overlap weights, separable tap calculation, boundary
+models, and NumPy-only MSE/PSNR/SSIM calculations, are documented in
+[`implementation-from-scratch.md`](implementation-from-scratch.md). The code is
+an independent implementation based on the cited mathematics, not copied
+source from an existing interpolation library.

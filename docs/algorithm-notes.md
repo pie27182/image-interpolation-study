@@ -1,95 +1,92 @@
-# Algorithm notes
+# Algorithm and implementation notes
 
-This project deliberately defines its own conventions. Results from two image
-libraries need not be pixel-identical even when their filters share a name:
-coordinate transforms, edge extension, coefficient choices, and downsampling
-anti-aliasing can differ.
+The project separates two experiments:
 
-## Pixel-centre mapping
+1. **Library baseline:** Pillow's built-in filters, isolated in `library.py`.
+2. **Independent implementation:** explicit kernels and resampling operations
+   implemented in `kernels.py` and `resize.py` with NumPy array primitives only.
 
-For one axis, let `S` be the source length and `D` the destination length. The
-source coordinate corresponding to destination pixel `j` is
+The scratch path does not call Pillow, OpenCV, SciPy, scikit-image, or another
+image interpolation API. Pillow is still used for image file I/O and for the
+separately labelled reference baseline. The package does not depend on
+scikit-image for metrics; MSE, PSNR and SSIM are implemented in `metrics.py`.
 
-\[
- x_j = (j + 1/2)\frac{S}{D} - 1/2.
-\]
+## Methods implemented from first principles
 
-This maps pixel centres rather than treating the first pixel as a corner.
-Coordinates outside the image are handled by clamping sample indices to the
-nearest border pixel (edge extension).
+| Method | Formula / model | Key distinction |
+|---|---|---|
+| Nearest | Closest source sample | Piecewise constant; no anti-aliasing |
+| Bilinear | Triangle kernel, radius 1 | Four samples in 2D; cardinal and nonnegative |
+| Bicubic | Keys cubic convolution, radius 2, `a=-0.5` | Cardinal cubic; can overshoot |
+| Mitchell | Mitchell--Netravali, radius 2, `B=C=1/3` | Non-cardinal reconstruction filter; constant preserving |
+| Cubic B-spline | Cubic B-spline basis plus coefficient prefilter | Smooth basis; prefilter is essential for interpolation |
+| Lanczos-3 | `sinc(x) * sinc(x/3)`, radius 3 | Windowed sinc; sharp, can ring |
+| Area | Exact pixel-footprint overlap | Integrates pixel areas; especially useful for shrinking |
 
-## Nearest neighbour
+See [`implementation-from-scratch.md`](implementation-from-scratch.md) for
+derivations, boundary equations and code architecture. See
+[`theoretical-foundations.md`](theoretical-foundations.md) for the broader
+signal-processing and approximation-theory discussion.
 
-Choose the source pixel whose centre is closest to the mapped coordinate:
+## Pixel-centre coordinates
 
-\[
- i = \lfloor x_j + 1/2 \rfloor.
-\]
-
-The selected source value is copied without averaging. This preserves hard
-pixel boundaries and is useful for pixel art and label masks, but can produce
-jagged edges and aliasing.
-
-## Bilinear interpolation
-
-Let `i=floor(x)`, `t=x-i`, and use the two adjacent samples. The one-dimensional
-weights are `1-t` and `t`; in two dimensions the four products of horizontal
-and vertical weights are applied to the 2x2 neighbourhood. The triangle kernel
-is
+For source length `S` and destination length `D`, the default half-pixel
+mapping is
 
 \[
- h(x)=\max(1-|x|,0).
+ x_j=(j+1/2)S/D-1/2.
 \]
 
-## Bicubic interpolation (Keys cubic convolution)
-
-The implementation uses Keys' cubic convolution kernel with `a=-0.5`:
+An optional `align_corners` mapping is also available:
 
 \[
- h(x)=\begin{cases}
- (a+2)|x|^3-(a+3)|x|^2+1,&0\le |x|<1,\\
- a|x|^3-5a|x|^2+8a|x|-4a,&1\le |x|<2,\\
- 0,&|x|\ge2.
- \end{cases}
+ x_j=j(S-1)/(D-1),\quad D>1.
 \]
 
-A 4x4 neighbourhood contributes in two dimensions. Other applications and
-libraries may choose a different cubic parameter, so “bicubic” is not one
-unique numerical method.
+When `D=1`, the source centre is used. Coordinate conventions affect output
+alignment and must be recorded in comparisons.
 
-## Lanczos-3
+## Anti-aliasing
 
-Lanczos-3 is a windowed sinc reconstruction filter:
+For kernel methods, when reducing by scale `s=S/D > 1`, the support is widened
+and the kernel is evaluated at `(x-i)/s`. This is a scale-aware low-pass
+approximation. `nearest` deliberately remains point sampling. `area` integrates
+pixel footprints explicitly and does not use the kernel-widening flag.
 
-\[
- h(x)=\begin{cases}
- \operatorname{sinc}(x)\operatorname{sinc}(x/3),&|x|<3,\\
- 0,&|x|\ge3,
- \end{cases}
- \qquad \operatorname{sinc}(x)=\frac{\sin(\pi x)}{\pi x},
-\]
+## Boundary modes
 
-with `sinc(0)=1`. Its support radius is 3 input pixels on each axis, so up to
-6 samples per axis contribute (more around fractional endpoints because of
-inclusive integer support bounds).
+- `clamp`: replicate the nearest edge sample.
+- `reflect`: whole-sample symmetric reflection (`-1` maps to `1`).
+- `wrap`: periodic extension.
+- `constant`: use the requested `cval` outside the image.
 
-## Separable filtering and downsampling
+Cubic B-spline prefiltering supports `clamp` and `reflect`, for which the
+endpoint rows of its tridiagonal coefficient system are defined explicitly.
 
-Bilinear, bicubic and Lanczos-3 are separable: the 2-D filter is the product of
-one 1-D horizontal and one 1-D vertical filter. The code therefore performs
-horizontal and vertical passes.
+## Library baseline
 
-When shrinking, the implementation widens each reconstruction kernel by the
-source-to-destination scale. This integrates over a wider source region and
-acts as a low-pass filter before sampling, reducing aliasing. Nearest-neighbour
-is intentionally left as point sampling. All weights are normalized per
-output coordinate, including at image borders.
+Pillow baselines are available for nearest, bilinear, bicubic, Lanczos and
+box/area filters. Pillow does not expose this project's Mitchell--Netravali
+or cubic B-spline methods as equivalent named options, so those methods are
+reported only in the scratch results. The project does not pretend that
+library presets with similar names are pixel-identical: coordinate mappings,
+filter coefficients, edge policies, downsampling strategy and precision may
+differ.
 
-## Research caveat
+## Reproducible experiment guidance
 
-The benchmark creates one low-resolution image using a stated Pillow filter,
-then reconstructs it to the original dimensions. The original is the reference
-for MSE, PSNR and SSIM. This is a controlled experiment, not a universal ranking:
-results depend on image content, scale factor, degradation filter, colour space,
-edge policy, and implementation details. Run more than one source image and
-more than one scale factor for a defensible thesis conclusion.
+- Use identical low-resolution inputs for all methods in a comparison.
+- Repeat with multiple downsampling/degradation filters; a reconstruction
+  filter should not be judged only on data generated by itself.
+- Test both enlargement and reduction, as their aliasing requirements differ.
+- Include natural photographs, edges, impulses, gradients, periodic gratings,
+  checkerboards, text and fine textures.
+- Report the coordinate convention, boundary mode, kernel parameters,
+  anti-aliasing setting, colour-space handling, image dimensions and software
+  versions.
+- Run warmups and repeated timings; report medians and dispersion.
+- Present MSE, PSNR and the project's uniform-window SSIM alongside visual
+  crops and discussion of blur, ringing, edge sharpness and aliasing.
+
+The mathematical background and source list are in `theoretical-foundations.md`
+and `research-sources.md`.
