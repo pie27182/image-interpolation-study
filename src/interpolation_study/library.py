@@ -20,5 +20,9 @@ def resize_with_pillow(image: np.ndarray, size: tuple[int, int], method: str) ->
     array = np.asarray(image)
     if array.dtype != np.uint8:
         array = np.clip(np.rint(array), 0, 255).astype(np.uint8)
+    squeeze_channel = array.ndim == 3 and array.shape[2] == 1
+    if squeeze_channel:
+        array = array[..., 0]
     pil_image = Image.fromarray(array)
-    return np.asarray(pil_image.resize(size, resample=PILLOW_FILTERS[method])).astype(np.float64)
+    result = np.asarray(pil_image.resize(size, resample=PILLOW_FILTERS[method])).astype(np.float64)
+    return result[..., None] if squeeze_channel else result

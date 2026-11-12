@@ -9,11 +9,6 @@ from __future__ import annotations
 import numpy as np
 
 
-def nearest(distance: np.ndarray) -> np.ndarray:
-    """Nearest-neighbour point-sampling kernel (used with a dedicated path)."""
-    return (np.abs(distance) < 0.5).astype(np.float64)
-
-
 def linear(distance: np.ndarray) -> np.ndarray:
     """Triangle/hat kernel, with support radius 1."""
     x = np.abs(distance)
