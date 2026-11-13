@@ -69,13 +69,13 @@ $$
 
 where the normalized sinc is
 
-$$
+```math
  \mathrm{sinc}(u)=
  \begin{cases}
  \dfrac{\sin(\pi u)}{\pi u},&u\ne0,\\
  1,&u=0.
  \end{cases}
-$$
+```
 
 For unit-spaced, two-dimensional samples, the separable ideal reconstruction is
 
@@ -178,13 +178,13 @@ $$
 
 A centred one-dimensional box basis can be described (up to the tie convention at exactly half-integer positions) by
 
-$$
+```math
  \varphi_{NN}(x)=
  \begin{cases}
  1,&\lvert x \rvert<\tfrac12,\\
  0,&\text{otherwise}.
  \end{cases}
-$$
+```
 
 The reconstructed function is piecewise constant. It is exceptionally cheap and does not invent intermediate class values, which is why nearest-neighbour is appropriate for segmentation masks, label maps, categorical rasters, and pixel art. It gives blocky enlargements and jagged transformed edges for photographs, and point-sampling during reduction can alias badly.
 
@@ -223,14 +223,14 @@ This is a weighted average of the four corners of the containing cell. It is a l
 
 Keys derived a piecewise cubic convolution kernel. In normalized coordinates $r=\lvert x \rvert$, its one-dimensional form is
 
-$$
+```math
  K_a(x)=
  \begin{cases}
  (a+2)r^3-(a+3)r^2+1,&0\le r<1,\\
  ar^3-5ar^2+8ar-4a,&1\le r<2,\\
  0,&r\ge2.
  \end{cases}
-$$
+```
 
 Keys obtains this family by imposing symmetry, compact support, interpolation at integer nodes, continuity constraints, and accuracy conditions. A Taylor-series argument selects $a=-\tfrac12$ for third-order convergence in the paper's construction; this parameter is often associated with Catmull–Rom cubic convolution. Other values are used by real libraries, producing visibly and numerically different results.
 
@@ -246,14 +246,14 @@ It can preserve more detail than bilinear interpolation, but negative portions o
 
 Mitchell and Netravali studied a two-parameter family of piecewise cubic reconstruction filters, commonly parameterized by $B$ and $C$. One common expression is
 
-$$
+```math
 K_{B,C}(x)=\frac{1}{6}
 \begin{cases}
 (12-9B-6C)r^3+(-18+12B+6C)r^2+(6-2B),&0\le r<1,\\
 (-B-6C)r^3+(6B+30C)r^2+(-12B-48C)r+(8B+24C),&1\le r<2,\\
 0,&r\ge2.
 \end{cases}
-$$
+```
 
 Different parameter choices trade blur, ringing, and alias rejection. The paper's well-known compromise is $(B,C)=(\tfrac13,\tfrac13)$; other choices include cubic B-spline-like smoothing and sharper Catmull–Rom-like interpolation. The paper emphasizes that filters should be judged not only by their fit at sample points but also by their frequency response and visible artifacts.
 
@@ -269,14 +269,14 @@ $$
 
 The cubic B-spline basis function is
 
-$$
+```math
 \beta^3(x)=
 \begin{cases}
 \frac23-\lvert x \rvert^2+\frac{\lvert x \rvert^3}{2},&0\le\lvert x \rvert<1,\\
 \frac{(2-\lvert x \rvert)^3}{6},&1\le\lvert x \rvert<2,\\
 0,&\lvert x \rvert\ge2.
 \end{cases}
-$$
+```
 
 A crucial distinction: the cubic B-spline basis is smooth and compactly supported, but it is **not interpolating**. If raw pixel samples are used directly as B-spline coefficients, the reconstructed spline generally does not pass exactly through the pixels; it is a smoothed approximation. To obtain an exact interpolating spline, one must first calculate coefficients by inverting the discrete sampling relation. In practice this is implemented by a digital prefilter, often using efficient recursive causal and anti-causal filters rather than explicitly inverting a large matrix.
 
@@ -286,13 +286,13 @@ This explains why “cubic B-spline interpolation” is not the same method as K
 
 The Lanczos kernel is a windowed sinc. With radius $a>0$,
 
-$$
+```math
  K_{L,a}(x)=
  \begin{cases}
  \mathrm{sinc}(x)\mathrm{sinc}(x/a),&\lvert x \rvert<a,\\
  0,&\lvert x \rvert\ge a.
  \end{cases}
-$$
+```
 
 Lanczos-3 uses $a=3$; in one dimension the kernel has finite radius three, and a separable two-dimensional version applies it along both axes. The window truncates the infinite sinc while retaining much of its frequency-selective behaviour. A wider support follows the ideal sinc more closely but requires more work. Oscillatory side lobes can cause ringing around high-contrast edges, especially when a sharp dark-to-light transition is present.
 
