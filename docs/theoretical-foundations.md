@@ -64,13 +64,13 @@ Under the band-limited assumptions, the one-dimensional Whittaker–Shannon reco
 
 $$
  f_r(x)=\sum_{n=-\infty}^{\infty} f_s[n]\,
- \operatorname{sinc}\!\left(\frac{x}{T}-n\right),
+ \mathrm{sinc}\!\left(\frac{x}{T}-n\right),
 $$
 
 where the normalized sinc is
 
 $$
- \operatorname{sinc}(u)=
+ \mathrm{sinc}(u)=
  \begin{cases}
  \dfrac{\sin(\pi u)}{\pi u},&u\ne0,\\[4pt]
  1,&u=0.
@@ -81,7 +81,7 @@ For unit-spaced, two-dimensional samples, the separable ideal reconstruction is
 
 $$
  \widehat I(x,y)=\sum_{i\in\mathbb Z}\sum_{j\in\mathbb Z}
- I[i,j]\,\operatorname{sinc}(x-i)\operatorname{sinc}(y-j).
+ I[i,j]\,\mathrm{sinc}(x-i)\mathrm{sinc}(y-j).
 $$
 
 The sinc is an ideal interpolating kernel: it equals one at zero and zero at every other integer. It preserves every frequency in the representable baseband and rejects frequencies outside it. Its limitations are practical: it has infinite support, decays slowly, requires infinitely many samples in theory, and its oscillatory side lobes can cause ringing when a finite approximation is used. MIT's sampling chapter derives this ideal reconstruction and explains why local kernels are used in practice.
@@ -173,7 +173,7 @@ with appropriate normalization and boundary extension. This equation is the core
 Choose the source sample whose centre is closest to the query coordinate:
 
 $$
- \widehat f(x)=f_s[\operatorname{round}(x)].
+ \widehat f(x)=f_s[\mathrm{round}(x)].
 $$
 
 A centred one-dimensional box basis can be described (up to the tie convention at exactly half-integer positions) by
@@ -290,7 +290,7 @@ The Lanczos kernel is a windowed sinc. With radius $a>0$,
 $$
  K_{L,a}(x)=
  \begin{cases}
- \operatorname{sinc}(x)\operatorname{sinc}(x/a),&|x|<a,\\
+ \mathrm{sinc}(x)\mathrm{sinc}(x/a),&|x|<a,\\
  0,&|x|\ge a.
  \end{cases}
 $$
@@ -485,7 +485,7 @@ Let the reference image be $I$, reconstruction be $\widehat I$, and there be $N$
 **Mean squared error (MSE)**
 
 $$
- \operatorname{MSE}=\frac1N\sum_{n=1}^N(I_n-\widehat I_n)^2.
+ \mathrm{MSE}=\frac1N\sum_{n=1}^N(I_n-\widehat I_n)^2.
 $$
 
 Lower is better. MSE is mathematically simple but treats all sample errors independently and equally.
@@ -493,7 +493,7 @@ Lower is better. MSE is mathematically simple but treats all sample errors indep
 **Peak signal-to-noise ratio (PSNR)**
 
 $$
- \operatorname{PSNR}=10\log_{10}\left(\frac{L^2}{\operatorname{MSE}}\right)\;\mathrm{dB},
+ \mathrm{PSNR}=10\log_{10}\left(\frac{L^2}{\mathrm{MSE}}\right)\;\mathrm{dB},
 $$
 
 where $L$ is the maximum possible sample value (255 for ordinary 8-bit samples, or 1 for normalized floating-point data). Higher is better; an exact match yields infinite PSNR. PSNR is a logarithmic restatement of MSE, not an independent perceptual model.
@@ -503,7 +503,7 @@ where $L$ is the maximum possible sample value (255 for ordinary 8-bit samples, 
 SSIM compares local luminance, contrast, and structure. A commonly used combined form is
 
 $$
- \operatorname{SSIM}(x,y)=
+ \mathrm{SSIM}(x,y)=
  \frac{(2\mu_x\mu_y+C_1)(2\sigma_{xy}+C_2)}
  {(\mu_x^2+\mu_y^2+C_1)(\sigma_x^2+\sigma_y^2+C_2)},
 $$
