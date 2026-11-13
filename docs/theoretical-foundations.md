@@ -180,11 +180,11 @@ $$
 A centred one-dimensional box basis can be described (up to the tie convention at exactly half-integer positions) by
 
 $$
- \varphi_{NN}(x)=
- \left\{\begin{array}{ll}
- 1,&|x|<\tfrac12,\\
- 0,&\text{otherwise}.
- \end{array}\right.
+\varphi_{\text{NN}}(x) =
+\begin{cases}
+1, & \lvert x \rvert < \tfrac{1}{2}, \\\\
+0, & \text{otherwise}.
+\end{cases}
 $$
 
 The reconstructed function is piecewise constant. It is exceptionally cheap and does not invent intermediate class values, which is why nearest-neighbour is appropriate for segmentation masks, label maps, categorical rasters, and pixel art. It gives blocky enlargements and jagged transformed edges for photographs, and point-sampling during reduction can alias badly.
