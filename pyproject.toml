@@ -8,7 +8,7 @@ version = "0.2.0"
 description = "Исследовательский проект по реализации классической интерполяции изображений с математических первых принципов."
 readme = "README.md"
 requires-python = ">=3.10"
-license = { text = "MIT" }
+license = "MIT"
 authors = [{ name = "Image Interpolation Study" }]
 dependencies = [
   "numpy>=1.24",
