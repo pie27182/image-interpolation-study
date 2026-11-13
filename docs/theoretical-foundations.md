@@ -273,8 +273,8 @@ The cubic B-spline basis function is
 $$
 \beta^3(x)=
 \begin{cases}
-\frac23-|x|^2+\frac{|x|^3}{2},&0\le|x|<1,\\[3pt]
-\frac{(2-|x|)^3}{6},&1\le|x|<2,\\[3pt]
+\frac23-|x|^2+\frac{|x|^3}{2},&0\le|x|<1,
+\frac{(2-|x|)^3}{6},&1\le|x|<2,
 0,&|x|\ge2.
 \end{cases}
 $$
