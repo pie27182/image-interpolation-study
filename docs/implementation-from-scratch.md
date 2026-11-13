@@ -98,13 +98,13 @@ response attenuates fine detail.
 
 For $r=\lvert x \rvert$, Keys' kernel is
 
-$$
+```math
  K_a(x)=\begin{cases}
  (a+2)r^3-(a+3)r^2+1,&0\le r<1,\\
  ar^3-5ar^2+8ar-4a,&1\le r<2,\\
  0,&r\ge2.
  \end{cases}
-$$
+```
 
 The default is $a=-0.5$; `keys_a` makes the parameter explicit. This is a
 cardinal kernel: it is one at zero and zero at other integer offsets. Its
@@ -116,14 +116,14 @@ undershoot next to sharp transitions.
 
 The two-parameter cubic family is
 
-$$
+```math
  K_{B,C}(x)=\begin{cases}
  \frac{(12-9B-6C)r^3+(-18+12B+6C)r^2+(6-2B)}{6},&0\le r<1,\\[3pt]
  \frac{(-B-6C)r^3+(6B+30C)r^2+(-12B-48C)r+(8B+24C)}{6},&1\le r<2,\\[3pt]
  0,&r\ge2,
  \end{cases}
  \qquad r=\lvert x \rvert.
-$$
+```
 
 The default $B=C=1/3$ is a non-cardinal reconstruction filter: its central
 value is $8/9$, not one. The kernel is normalized at each output position,
@@ -136,13 +136,13 @@ other useful cubic behaviours; for example $B=0,C=1/2$ is Catmull--Rom-like.
 
 The centred cubic B-spline basis is
 
-$$
+```math
  \beta^3(x)=\begin{cases}
  \frac{4-6\lvert x \rvert^2+3\lvert x \rvert^3}{6},&\lvert x \rvert<1,\\
  \frac{(2-\lvert x \rvert)^3}{6},&1\le \lvert x \rvert<2,\\
  0,&\lvert x \rvert\ge2.
  \end{cases}
-$$
+```
 
 It is smooth and compactly supported, but it is not cardinal. Substituting raw
 pixel values as spline coefficients would blur even at the original sample
@@ -181,12 +181,12 @@ $$
  \mathrm{sinc}(0)=1,
 $$
 
-$$
+```math
  K_{L,3}(x)=\begin{cases}
  \mathrm{sinc}(x)\mathrm{sinc}(x/3),&\lvert x \rvert<3,\\
  0,&\lvert x \rvert\ge3.
  \end{cases}
-$$
+```
 
 The support radius is three source pixels. Windowing the ideal sinc makes the
 filter finite, but it introduces a trade-off: the filter is no longer ideal
