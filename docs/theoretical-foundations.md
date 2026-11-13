@@ -72,7 +72,7 @@ where the normalized sinc is
 $$
  \mathrm{sinc}(u)=
  \begin{cases}
- \dfrac{\sin(\pi u)}{\pi u},&u\ne0,\\[4pt]
+ \dfrac{\sin(\pi u)}{\pi u},&u\ne0,
  1,&u=0.
  \end{cases}
 $$
