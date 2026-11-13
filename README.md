@@ -24,7 +24,9 @@
 - [Реализация с нуля](docs/implementation-from-scratch.md) — формулы, граничные условия и устройство алгоритмов на NumPy.
 - [Протокол экспериментов](docs/experiment-protocol.md) — подготовка данных и проведение сравнения.
 - [Источники](docs/research-sources.md) — научные публикации и документация библиотек.
-- [Краткие заметки](docs/algorithm-notes.md) — соглашения координат, фильтрация и режимы границ.\n- [Аудит зависимостей](docs/dependency-audit.md) — какие библиотеки используются в scratch, CLI и визуализации.
+- [Краткие заметки](docs/algorithm-notes.md) — соглашения координат, фильтрация и режимы границ.
+- [Наборы тестовых изображений](docs/test-image-sources.md) — синтетические паттерны, внешние датасеты и условия использования.
+- [Аудит зависимостей](docs/dependency-audit.md) — какие библиотеки используются в scratch, CLI и визуализации.
 
 ## Установка
 
@@ -78,16 +80,16 @@ image-interpolation resize input.jpg output.png \
 
 ## Сравнительный эксперимент
 
-Сначала создайте синтетические тестовые изображения:
+Сначала создайте восемь синтетических тестовых изображений: градиент, шахматную решётку, импульс, наклонную границу, периодическую решётку, Zone Plate, звезду Siemens и частотный sweep. Файлы сохраняются в `data/synthetic/`, который исключён из Git. Описание внешних источников и лицензий — в [руководстве по тестовым наборам](docs/test-image-sources.md).
 
 ```bash
-python examples/generate_test_images.py
+python examples/generate_test_images.py --output-dir data/synthetic --size 512
 ```
 
 Затем запустите тест качества и времени выполнения:
 
 ```bash
-image-interpolation benchmark examples/synthetic_edges.png \
+image-interpolation benchmark data/synthetic/synthetic_edges.png \
   --scale 2 --degradation lanczos3 --warmup 1 --repeats 5 \
   --output-dir results/synthetic-edges
 ```

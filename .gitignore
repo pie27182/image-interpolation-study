@@ -8,3 +8,7 @@ build/
 dist/
 results/
 .DS_Store
+
+# Скачанные и сгенерированные наборы данных не хранятся в Git.
+data/synthetic/
+data/external/
