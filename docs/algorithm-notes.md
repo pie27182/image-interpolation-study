@@ -1,92 +1,67 @@
-# Algorithm and implementation notes
+# Заметки об алгоритмах и реализации
 
-The project separates two experiments:
+Проект разделяет два эксперимента:
 
-1. **Library baseline:** Pillow's built-in filters, isolated in `library.py`.
-2. **Independent implementation:** explicit kernels and resampling operations
-   implemented in `kernels.py` and `resize.py` with NumPy array primitives only.
+1. **Базовая библиотечная реализация:** встроенные фильтры Pillow, изолированные в `library.py`.
+2. **Независимая реализация:** явные ядра и операции передискретизации, реализованные в `kernels.py` и `resize.py) только с помощью массивов NumPy.
 
-The scratch path does not call Pillow, OpenCV, SciPy, scikit-image, or another
-image interpolation API. Pillow is still used for image file I/O and for the
-separately labelled reference baseline. The package does not depend on
-scikit-image for metrics; MSE, PSNR and SSIM are implemented in `metrics.py`.
+Самостоятельный путь не вызывает Pillow, OpenCV, SciPy, scikit-image или другой API интерполяции изображений. Pillow по-прежнему используется для чтения и записи файлов изображений и для отдельно обозначенной эталонной реализации. Пакет не зависит от scikit-image при вычислении метрик: MSE, PSNR и SSIM реализованы в `metrics.py`.
 
-## Methods implemented from first principles
+## Методы, реализованные с первых принципов
 
-| Method | Formula / model | Key distinction |
+| Метод | Формула / модель | Ключевое отличие |
 |---|---|---|
-| Nearest | Closest source sample | Piecewise constant; no anti-aliasing |
-| Bilinear | Triangle kernel, radius 1 | Four samples in 2D; cardinal and nonnegative |
-| Bicubic | Keys cubic convolution, radius 2, `a=-0.5` | Cardinal cubic; can overshoot |
-| Mitchell | Mitchell--Netravali, radius 2, `B=C=1/3` | Non-cardinal reconstruction filter; constant preserving |
-| Cubic B-spline | Cubic B-spline basis plus coefficient prefilter | Smooth basis; prefilter is essential for interpolation |
-| Lanczos-3 | `sinc(x) * sinc(x/3)`, radius 3 | Windowed sinc; sharp, can ring |
-| Area | Exact pixel-footprint overlap | Integrates pixel areas; especially useful for shrinking |
+| Ближайший сосед | Ближайший исходный отсчёт | Кусочно-постоянная функция; без подавления наложения спектров |
+| Билинейный | Треугольное ядро, радиус 1 | Четыре отсчёта в 2D; кардинальное и неотрицательное |
+| Бикубический | Кубическая свёртка Keys, радиус 2, `a=-0.5` | Кардинальное кубическое ядро; возможно превышение диапазона |
+| Mitchell | Mitchell--Netravali, радиус 2, `B=C=1/3` | Некардинальный реконструкционный фильтр; сохраняет константы |
+| Кубический B-сплайн | Базис кубического B-сплайна и предварительная фильтрация коэффициентов | Гладкая базисная функция; предварительная фильтрация необходима для интерполяции |
+| Lanczos-3 | `sinc(x) * sinc(x/3)`, радиус 3 | Оконная функция sinc; резкий, но может давать звон |
+| По площади (Area) | Точное перекрытие пиксельных отпечатков | Интегрирует площади пикселей; особенно полезен при уменьшении |
 
-See [`implementation-from-scratch.md`](implementation-from-scratch.md) for
-derivations, boundary equations and code architecture. See
-[`theoretical-foundations.md`](theoretical-foundations.md) for the broader
-signal-processing and approximation-theory discussion.
+Выводы формул, уравнения для граничных условий и архитектура кода приведены в [`implementation-from-scratch.md`](implementation-from-scratch.md). Более широкий разбор обработки сигналов и теории приближений см. в [`theoretical-foundations.md`](theoretical-foundations.md).
 
-## Pixel-centre coordinates
+## Координаты центров пикселей
 
-For source length `S` and destination length `D`, the default half-pixel
-mapping is
+Для длины исходного изображения `S` и длины целевого изображения `D` по умолчанию используется отображение с полуцелым смещением:
 
 $$
  x_j=(j+1/2)S/D-1/2.
 $$
 
-An optional `align_corners` mapping is also available:
+Также доступно необязательное отображение `align_corners`:
 
 $$
  x_j=j(S-1)/(D-1),\quad D>1.
 $$
 
-When `D=1`, the source centre is used. Coordinate conventions affect output
-alignment and must be recorded in comparisons.
+При `D=1` используется центр исходного изображения. Соглашения о координатах влияют на выравнивание результата, поэтому их необходимо фиксировать при сравнении.
 
-## Anti-aliasing
+## Подавление наложения спектров
 
-For kernel methods, when reducing by scale `s=S/D > 1`, the support is widened
-and the kernel is evaluated at `(x-i)/s`. This is a scale-aware low-pass
-approximation. `nearest` deliberately remains point sampling. `area` integrates
-pixel footprints explicitly and does not use the kernel-widening flag.
+Для методов с ядром при уменьшении изображения с коэффициентом `s=S/D > 1` область поддержки расширяется, а ядро вычисляется в точке `(x-i)/s`. Это низкочастотное приближение, учитывающее масштаб. Метод `nearest` намеренно остаётся выборкой в отдельной точке. Метод `area` явно интегрирует пиксельные отпечатки и не использует флаг расширения ядра.
 
-## Boundary modes
+## Режимы обработки границ
 
-- `clamp`: replicate the nearest edge sample.
-- `reflect`: whole-sample symmetric reflection (`-1` maps to `1`).
-- `wrap`: periodic extension.
-- `constant`: use the requested `cval` outside the image.
+- `clamp`: повторять ближайший крайний отсчёт.
+- `reflect`: симметричное отражение относительно целого отсчёта (`-1` отображается в `1`).
+- `wrap`: периодическое продолжение.
+- `constant`: за пределами изображения использовать заданное значение `cval`.
 
-Cubic B-spline prefiltering supports `clamp` and `reflect`, for which the
-endpoint rows of its tridiagonal coefficient system are defined explicitly.
+Предварительная фильтрация кубического B-сплайна поддерживает `clamp` и `reflect`; для них граничные строки трёхдиагональной системы коэффициентов заданы явно.
 
-## Library baseline
+## Базовая библиотечная реализация
 
-Pillow baselines are available for nearest, bilinear, bicubic, Lanczos and
-box/area filters. Pillow does not expose this project's Mitchell--Netravali
-or cubic B-spline methods as equivalent named options, so those methods are
-reported only in the scratch results. The project does not pretend that
-library presets with similar names are pixel-identical: coordinate mappings,
-filter coefficients, edge policies, downsampling strategy and precision may
-differ.
+Базовые варианты Pillow доступны для ближайшего соседа, билинейной и бикубической интерполяции, Lanczos и фильтра BOX/Area. Pillow не предоставляет эквивалентных именованных вариантов Mitchell--Netravali или кубического B-сплайна с предварительной фильтрацией коэффициентов, поэтому эти методы приводятся только в результатах самостоятельной реализации. Проект не предполагает, что библиотечные предустановки со схожими названиями дают пиксельно идентичный результат: отображение координат, коэффициенты фильтра, правила обработки краёв, стратегия уменьшения и точность могут различаться.
 
-## Reproducible experiment guidance
+## Рекомендации по воспроизводимым экспериментам
 
-- Use identical low-resolution inputs for all methods in a comparison.
-- Repeat with multiple downsampling/degradation filters; a reconstruction
-  filter should not be judged only on data generated by itself.
-- Test both enlargement and reduction, as their aliasing requirements differ.
-- Include natural photographs, edges, impulses, gradients, periodic gratings,
-  checkerboards, text and fine textures.
-- Report the coordinate convention, boundary mode, kernel parameters,
-  anti-aliasing setting, colour-space handling, image dimensions and software
-  versions.
-- Run warmups and repeated timings; report medians and dispersion.
-- Present MSE, PSNR and the project's uniform-window SSIM alongside visual
-  crops and discussion of blur, ringing, edge sharpness and aliasing.
+- Используйте одинаковые входные изображения низкого разрешения для всех методов сравнения.
+- Повторяйте эксперимент с несколькими фильтрами уменьшения/ухудшения; реконструкционный фильтр нельзя оценивать только по данным, созданным им самим.
+- Проверяйте и увеличение, и уменьшение: требования к борьбе с наложением спектров в этих случаях различаются.
+- Включайте естественные фотографии, границы, импульсы, градиенты, периодические решётки, шахматные узоры, текст и мелкие текстуры.
+- Указывайте соглашение о координатах, режим границ, параметры ядра, настройки подавления наложения спектров, обработку цветового пространства, размеры изображений и версии программ.
+- Выполняйте прогрев и повторные замеры времени; сообщайте медиану и разброс.
+- Приводите MSE, PSNR и используемый в проекте вариант SSIM с равномерным окном вместе с визуальными фрагментами и обсуждением размытия, звона, резкости границ и наложения спектров.
 
-The mathematical background and source list are in `theoretical-foundations.md`
-and `research-sources.md`.
+Математические основы и список источников приведены в `theoretical-foundations.md` и `research-sources.md`.

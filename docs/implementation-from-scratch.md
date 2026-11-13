@@ -1,102 +1,77 @@
-# From-scratch implementation guide
+# Руководство по самостоятельной реализации с нуля
 
-This document describes the actual implementation in `src/interpolation_study/`.
-The routines are written for this project from the equations in the cited
-literature. NumPy supplies arrays, elementary arithmetic, indexing, cumulative
-sums and linear-algebra-friendly storage; no call to Pillow, OpenCV, SciPy or
-scikit-image performs interpolation in the scratch path.
+В этом документе описана фактическая реализация, расположенная в `src/interpolation_study/`. Процедуры написаны специально для данного проекта на основе уравнений из цитируемой литературы. NumPy предоставляет массивы, элементарную арифметику, индексацию, накопительные суммы и структуры данных, удобные для линейной алгебры; в самостоятельной реализации для интерполяции не вызываются функции Pillow, OpenCV, SciPy или scikit-image.
 
-Pillow remains in a separate module for reading/writing common image formats
-and for the optional library-baseline experiment. This separation matters:
-`resize.py` and `kernels.py` do not import it.
+Pillow остаётся в отдельном модуле для чтения и записи распространённых форматов изображений и для необязательного эксперимента с базовой библиотечной реализацией. Это разделение важно: `resize.py` и `kernels.py` не импортируют Pillow.
 
-## 1. Common coordinate model
+## 1. Общая модель координат
 
-For source length $S$, destination length $D$, and destination index
-$j$, the default half-pixel mapping is
+Для длины исходного изображения $S$, длины целевого изображения $D$ и индекса целевого отсчёта $j$ по умолчанию используется отображение с полуцелым смещением:
 
 $$
  x_j=(j+\tfrac12)\frac{S}{D}-\tfrac12.
 $$
 
-It maps destination pixel centres to source pixel-centre coordinates. The
-inverse mapping is used because each output pixel asks where to sample the
-input. When source and destination dimensions are equal, the operation is
-explicitly the identity (including for reconstruction filters which are not
-cardinal).
+Оно отображает центры пикселей целевого изображения в координаты центров пикселей исходного изображения. Используется обратное отображение, поскольку каждый выходной пиксель задаёт точку, в которой нужно получить значение входного изображения. Если размеры исходного и целевого изображений совпадают, операция явно считается тождественным преобразованием (в том числе для реконструкционных фильтров, не обладающих кардинальным свойством).
 
-The alternative `align_corners` mapping is
+Альтернативное отображение `align_corners` задаётся формулой:
 
 $$
  x_j=j\frac{S-1}{D-1},\qquad D>1,
 $$
 
-with the centre of the source chosen when $D=1$. These coordinate choices
-are not interchangeable. A comparison must record which one it uses.
+а при $D=1$ выбирается центр исходного изображения. Эти соглашения о координатах не взаимозаменяемы. При сравнении необходимо указывать, какое именно используется.
 
-## 2. General separable resampling
+## 2. Общая сепарабельная передискретизация
 
-For a one-dimensional kernel $K$, output coordinate $x_j$, support radius
-$R$, and source-to-destination scale $s=S/D$, a source sample $i$
-contributes the weight
+Для одномерного ядра $K$, координаты выходного отсчёта $x_j$, радиуса поддержки $R$ и масштаба перехода от исходного размера к целевому $s=S/D$ исходный отсчёт $i$ вносит вес
 
 $$
  w_{j,i}=K\left(\frac{x_j-i}{q}\right),\qquad
  q=\max(1,s)
 $$
 
-when anti-aliasing is enabled. Its normalized weight is
+при включённом подавлении наложения спектров. Нормированный вес равен
 
 $$
  \widetilde w_{j,i}=\frac{w_{j,i}}{\sum_k w_{j,k}}.
 $$
 
-Only integer samples in the effective support $\lvert x_j-i \rvert<Rq$ are included.
-The width grows during downscaling, so the resampler integrates a wider source
-neighbourhood before producing a more sparsely sampled output. The implementation
-precomputes the indices, validity flags and normalized weights for each axis.
-It then performs horizontal and vertical passes. For a separable kernel,
+Учитываются только целочисленные отсчёты в эффективной области поддержки $\lvert x_j-i \rvert<Rq$. При уменьшении ширина фильтра растёт, поэтому перед формированием более разреженного выходного изображения ресэмплер анализирует более широкую окрестность исходного изображения. Реализация заранее вычисляет индексы, флаги допустимости и нормированные веса для каждой оси. Затем выполняются горизонтальный и вертикальный проходы. Для сепарабельного ядра
 
 $$
  K_{2D}(x,y)=K(x)K(y),
 $$
 
-so the two one-dimensional passes are mathematically equivalent to a direct
-2D weighted sum, while using substantially fewer multiply-accumulate operations.
+поэтому два одномерных прохода математически эквивалентны прямой двумерной взвешенной сумме, но требуют значительно меньше операций умножения с накоплением.
 
-The filter weights are normalized for each output position. This preserves a
-constant image even when part of a kernel footprint falls outside the finite
-image. The selected boundary mode determines what those outside samples mean.
+Веса фильтра нормируются отдельно для каждой выходной позиции. Благодаря этому постоянное изображение остаётся постоянным даже в тех случаях, когда часть области действия ядра выходит за пределы конечного изображения. Значение таких внешних отсчётов определяется выбранным режимом границ.
 
-## 3. Implemented kernels
+## 3. Реализованные ядра
 
-### Nearest neighbour
+### Ближайший сосед
 
-The source index is the closest integer centre:
+Выбирается индекс ближайшего целочисленного центра:
 
 $$
  i_j=\lfloor x_j+\tfrac12\rfloor.
 $$
 
-No averaging occurs. This keeps label values discrete, but is not an
-anti-aliased reduction filter.
+Усреднение не выполняется. Это позволяет сохранять дискретные значения меток, но такой метод не является фильтром уменьшения с подавлением наложения спектров.
 
-### Bilinear
+### Билинейная интерполяция
 
-The one-dimensional triangle kernel is
+Одномерное треугольное ядро задаётся формулой
 
 $$
  K_{lin}(x)=\max(1-\lvert x \rvert,0).
 $$
 
-In two dimensions its product form uses the four surrounding source samples.
-The weights are nonnegative and sum to one. The method reproduces constants
-and linear ramps away from boundary-extension effects, but its frequency
-response attenuates fine detail.
+В двумерном случае его произведение использует четыре ближайших исходных отсчёта. Веса неотрицательны и в сумме равны единице. Метод воспроизводит константы и линейные рампы вдали от влияния граничного продолжения, однако его частотная характеристика подавляет мелкие детали.
 
-### Keys bicubic / cubic convolution
+### Бикубическая интерполяция Keys / кубическая свёртка
 
-For $r=\lvert x \rvert$, Keys' kernel is
+Пусть $r=\lvert x \rvert$. Ядро Keys задаётся выражением
 
 ```math
  K_a(x)=\begin{cases}
@@ -106,15 +81,11 @@ For $r=\lvert x \rvert$, Keys' kernel is
  \end{cases}
 ```
 
-The default is $a=-0.5$; `keys_a` makes the parameter explicit. This is a
-cardinal kernel: it is one at zero and zero at other integer offsets. Its
-support radius is two, giving four taps per axis for ordinary enlargement.
-Negative lobes can increase apparent sharpness and also produce overshoot or
-undershoot next to sharp transitions.
+По умолчанию $a=-0.5$; параметр `keys_a` позволяет задать его явно. Это кардинальное ядро: в нуле оно равно единице, а при остальных целочисленных смещениях равно нулю. Радиус его поддержки равен двум, поэтому при обычном увеличении используются четыре отсчёта по каждой оси. Отрицательные лепестки могут повысить воспринимаемую резкость, но также привести к превышению или занижению значений рядом с резкими переходами.
 
-### Mitchell--Netravali cubic family
+### Кубическое семейство Mitchell--Netravali
 
-The two-parameter cubic family is
+Двухпараметрическое кубическое семейство задаётся формулой
 
 ```math
  K_{B,C}(x)=\begin{cases}
@@ -125,16 +96,11 @@ The two-parameter cubic family is
  \qquad r=\lvert x \rvert.
 ```
 
-The default $B=C=1/3$ is a non-cardinal reconstruction filter: its central
-value is $8/9$, not one. The kernel is normalized at each output position,
-which preserves constants, but individual input samples are not necessarily
-reproduced. The `mitchell_b` and `mitchell_c` CLI/API parameters are recorded
-in experiment metadata when a custom run is prepared. The family includes
-other useful cubic behaviours; for example $B=0,C=1/2$ is Catmull--Rom-like.
+Вариант по умолчанию $B=C=1/3$ — некардинальный реконструкционный фильтр: его центральное значение равно $8/9$, а не единице. Ядро нормируется в каждой выходной позиции, что обеспечивает сохранение констант, однако отдельные входные отсчёты не обязательно воспроизводятся. Параметры CLI/API `mitchell_b` и `mitchell_c` записываются в метаданные эксперимента при подготовке пользовательского запуска. Семейство включает и другие полезные варианты кубических фильтров; например, $B=0,C=1/2$ даёт поведение, близкое к Catmull--Rom.
 
-### Cubic B-spline with coefficient prefilter
+### Кубический B-сплайн с предварительной фильтрацией коэффициентов
 
-The centred cubic B-spline basis is
+Центрированный базис кубического B-сплайна задаётся формулой
 
 ```math
  \beta^3(x)=\begin{cases}
@@ -144,37 +110,24 @@ The centred cubic B-spline basis is
  \end{cases}
 ```
 
-It is smooth and compactly supported, but it is not cardinal. Substituting raw
-pixel values as spline coefficients would blur even at the original sample
-locations. The code therefore computes coefficients first. At integer knots,
+Он гладкий и имеет компактную область поддержки, но не является кардинальным. Если подставить исходные значения пикселей непосредственно в качестве коэффициентов сплайна, изображение будет размываться даже в исходных точках отсчёта. Поэтому сначала код вычисляет коэффициенты. В целочисленных узлах:
 
 $$
  f[n]=\frac16c[n-1]+\frac23c[n]+\frac16c[n+1].
 $$
 
-For an interior line, this is a tridiagonal linear system. Under the selected
-finite-image boundary condition, the endpoint equations are modified:
+Для внутренней строки это трёхдиагональная система линейных уравнений. При выбранном граничном условии для конечного изображения уравнения на концах изменяются:
 
-- Whole-sample reflection (the implementation's `reflect` mode) uses
-  $f[0]=\frac23c[0]+\frac13c[1]$, with the symmetric equation at the
-  opposite end.
-- Edge clamping uses
-  $f[0]=\frac56c[0]+\frac16c[1]$, again symmetrically at the other end.
+- При отражении относительно целого отсчёта (режим реализации `reflect`) используется $f[0]=\frac23c[0]+\frac13c[1]$, а на противоположном конце — симметричное уравнение.
+- При прижатии к краю используется $f[0]=\frac56c[0]+\frac16c[1]$, также с симметричным уравнением на другом конце.
 
-The implementation solves each line with the Thomas algorithm, a specialized
-$O(N)$ solver for tridiagonal systems. It solves many image rows/columns at
-once by keeping the non-filtered dimensions in a matrix of right-hand sides.
-The prefilter is applied horizontally and vertically, after which the cubic
-B-spline basis is evaluated at the requested coordinates. The spline mode
-therefore supports `reflect` and `clamp` boundaries only.
+Реализация решает каждую строку алгоритмом Томаса — специализированным решателем трёхдиагональных систем со сложностью $O(N)$. Несколько строк/столбцов изображения решаются одновременно: нефильтруемые измерения хранятся в матрице правых частей. Предварительная фильтрация выполняется по горизонтали и вертикали, после чего базис кубического B-сплайна вычисляется в требуемых координатах. Поэтому режим сплайна поддерживает только граничные условия `reflect` и `clamp`.
 
-This is an interpolating cubic B-spline implementation, not a direct
-convolution of the original samples with a cubic B-spline basis. The
-coefficient prefilter is mathematically essential.
+Это реализация интерполирующего кубического B-сплайна, а не непосредственная свёртка исходных отсчётов с базисной функцией кубического B-сплайна. Предварительная фильтрация коэффициентов математически обязательна.
 
 ### Lanczos-3
 
-The normalized sinc and radius-three windowed-sinc kernel are
+Нормированная функция sinc и оконное ядро sinc с радиусом три задаются формулами
 
 $$
  \mathrm{sinc}(x)=\frac{\sin(\pi x)}{\pi x},\quad
@@ -188,23 +141,17 @@ $$
  \end{cases}
 ```
 
-The support radius is three source pixels. Windowing the ideal sinc makes the
-filter finite, but it introduces a trade-off: the filter is no longer ideal
-brick-wall reconstruction and can exhibit ringing because of its oscillatory
-side lobes.
+Радиус поддержки составляет три исходных пикселя. Оконная функция делает идеальную sinc конечной, но при этом возникает компромисс: фильтр уже не является идеальной реконструкцией с прямоугольной частотной характеристикой и может давать звон из-за колебательных боковых лепестков.
 
-### Area / pixel-footprint averaging
+### Усреднение по площади / пиксельному отпечатку
 
-Area resampling is implemented separately from point-kernel reconstruction.
-Source pixel $i$ occupies $[i-1/2,i+1/2]$. For scale $s=S/D$,
-destination pixel $j$ covers
+Передискретизация по площади реализована отдельно от точечной реконструкции с помощью ядра. Исходный пиксель $i$ занимает интервал $[i-1/2,i+1/2]$. При масштабе $s=S/D$ целевой пиксель $j$ покрывает в координатах исходного изображения интервал
 
 $$
  A_j=[js-\tfrac12,(j+1)s-\tfrac12]
 $$
 
-in source coordinates. The weight of source pixel $i$ is its exact overlap
-with that footprint:
+Вес исходного пикселя $i$ равен точной длине пересечения его области с этим отпечатком:
 
 $$
  w_{j,i}=\max\left(0,
@@ -212,31 +159,22 @@ $$
  -\max(js-\tfrac12,i-\tfrac12)\right).
 $$
 
-Weights are divided by their sum. The 2D operation is separable rectangle
-integration. It is particularly meaningful for reduction when pixels represent
-area averages. For enlargement, a shrinking footprint can behave like a
-piecewise-constant reconstruction, so area is not intended as a photographic
-sharp upscaler.
+Веса делятся на их сумму. Двумерная операция представляет собой сепарабельное интегрирование по прямоугольной области. Она особенно уместна при уменьшении, когда пиксели интерпретируются как средние значения по площади. При увеличении сужающийся отпечаток может вести себя как кусочно-постоянная реконструкция, поэтому метод area не предназначен для резкого увеличения фотографий.
 
-## 4. Boundary extension
+## 4. Расширение границ
 
-A finite image has no samples outside its stored extent. A filter footprint may
-nevertheless extend beyond the edge. This project makes that policy explicit:
+У конечного изображения нет отсчётов за пределами сохранённого массива. Тем не менее область действия фильтра может выходить за край. В этом проекте такая политика задаётся явно:
 
-- `clamp`: all out-of-range indices map to the nearest edge sample.
-- `reflect`: whole-sample symmetric reflection without repeating the edge;
-  for example, index -1 maps to 1. This corresponds to SciPy `mirror` and
-  OpenCV `BORDER_REFLECT_101`, not SciPy `reflect` (half-sample symmetry).
-- `wrap`: indices are periodic modulo the image length.
-- `constant`: out-of-range taps use `cval`.
+- `clamp`: все индексы за пределами изображения отображаются на ближайший крайний отсчёт.
+- `reflect`: симметричное отражение относительно целого отсчёта без повторения самого крайнего пикселя; например, индекс -1 отображается в 1. Это соответствует SciPy `mirror` и OpenCV `BORDER_REFLECT_101`, но не SciPy `reflect` (симметрия относительно половины отсчёта).
+- `wrap`: индексы периодически повторяются по модулю длины изображения.
+- `constant`: для отсчётов за пределами изображения используется `cval`.
 
-Boundary policies can materially change the first and last few output pixels.
-The B-spline prefilter uses endpoint equations matched to the `reflect` or
-`clamp` coefficient-extension model.
+Политика обработки границ может существенно изменить несколько первых и последних пикселей результата. Предварительная фильтрация B-сплайна использует уравнения на концах, соответствующие модели расширения коэффициентов `reflect` или `clamp`.
 
-## 5. Image-quality metrics, implemented in this project
+## 5. Метрики качества изображения, реализованные в проекте
 
-MSE and PSNR are direct NumPy calculations:
+MSE и PSNR вычисляются непосредственно с помощью NumPy:
 
 $$
  \mathrm{MSE}=\frac1N\sum_n(I_n-\widehat I_n)^2,
@@ -244,10 +182,9 @@ $$
  \mathrm{PSNR}=10\log_{10}\frac{L^2}{\mathrm{MSE}}.
 $$
 
-An exact match has zero MSE and infinite PSNR. `data_range` is 255 by default
-for 8-bit images and must be set to 1 for normalized [0,1] data.
+При точном совпадении MSE равна нулю, а PSNR бесконечна. По умолчанию `data_range` равен 255 для 8-битных изображений; для нормализованных данных [0,1] его необходимо задать равным 1.
 
-SSIM is implemented from its local statistics equation:
+SSIM вычисляется по формуле локальных статистик:
 
 $$
  \mathrm{SSIM}(x,y)=
@@ -255,50 +192,37 @@ $$
  {(\mu_x^2+\mu_y^2+C_1)(\sigma_x^2+\sigma_y^2+C_2)}.
 $$
 
-This repository uses a uniform square window (default 7x7) and the sample
-covariance correction $N/(N-1)$. The local means, second moments and cross
-moments are computed by separable running sums (cumulative sums), not by
-scikit-image. This setting agrees with the standard uniform-window formulation
-when the same window, channel treatment and covariance convention are used.
-Other SSIM implementations may use Gaussian windows or different border and
-channel rules, so record these settings when comparing results.
+В этом репозитории используется равномерное квадратное окно (по умолчанию 7x7) и поправка на выборочную ковариацию $N/(N-1)$. Локальные средние, вторые моменты и смешанные моменты вычисляются сепарабельными скользящими суммами (накопительными суммами), а не с помощью scikit-image. Этот вариант соответствует стандартной формуле с равномерным окном при использовании того же размера окна, обработки каналов и соглашения о ковариации. Другие реализации SSIM могут применять гауссовы окна или иные правила обработки границ и каналов, поэтому при сравнении результатов фиксируйте эти настройки.
 
-## 6. What is and is not an external dependency
+## 6. Что является и не является внешней зависимостью
 
-| Component | Implementation | External image-interpolation API? |
+| Компонент | Реализация | Используется ли внешняя API интерполяции изображений? |
 |---|---|---:|
-| Kernels | `kernels.py`, explicit equations | No |
-| Coordinate transform | `resize.py`, explicit equations | No |
-| Tap generation and edge mapping | `resize.py`, explicit loops and NumPy arrays | No |
-| Separable resampling | `resize.py`, explicit gather / multiply / sum | No |
-| B-spline coefficient prefilter | `resize.py`, Thomas tridiagonal solver | No |
-| Area overlap | `resize.py`, explicit interval intersections | No |
-| MSE / PSNR / SSIM | `metrics.py`, NumPy | No |
-| Image file I/O | Pillow | Not an interpolation operation |
-| Optional comparison baseline | Pillow resampling functions | Yes, baseline only |
+| Ядра | `kernels.py`, явные уравнения | Нет |
+| Преобразование координат | `resize.py`, явные уравнения | Нет |
+| Генерация отсчётов и отображение границ | `resize.py`, явные циклы и массивы NumPy | Нет |
+| Сепарабельная передискретизация | `resize.py`, явные операции выборки / умножения / суммирования | Нет |
+| Предварительная фильтрация коэффициентов B-сплайна | `resize.py`, трёхдиагональный решатель Томаса | Нет |
+| Перекрытие областей при усреднении | `resize.py`, явные пересечения интервалов | Нет |
+| MSE / PSNR / SSIM | `metrics.py`, NumPy | Нет |
+| Ввод-вывод файлов изображений | Pillow | Это не операция интерполяции |
+| Необязательная базовая реализация для сравнения | Функции передискретизации Pillow | Да, только для эталонного сравнения |
 
-For academic transparency, the formulas and algorithmic design are attributed
-to the literature in `research-sources.md`. The project code is a new,
-independently written implementation and does not copy the source code of
-Pillow, OpenCV, SciPy or scikit-image.
+Для академической прозрачности формулы и алгоритмический дизайн соотнесены с литературой в `research-sources.md`. Код проекта представляет собой новую независимую реализацию и не копирует исходный код Pillow, OpenCV, SciPy или scikit-image.
 
-## 7. Reproduction and validation checklist
+## 7. Контрольный список воспроизведения и проверки
 
-The automated tests cover:
+Автоматические тесты охватывают:
 
-- Output dimensions, grayscale and multichannel inputs, and invalid arguments.
-- Identity resizing and constant-image preservation for every method.
-- Nearest-neighbour discrete-value preservation.
-- Bilinear reproduction of an interior affine ramp.
-- Cardinal Keys kernel sample reproduction.
-- B-spline coefficient prefilter reconstruction under both supported boundary
-  conditions.
-- Mitchell's non-cardinal centre value and the Catmull--Rom-like parameter set.
-- Exact area averages for a 2x2 pixel-footprint reduction.
-- All boundary modes and both coordinate modes.
-- Metric values for known images, including identical-image SSIM and infinite
-  PSNR.
+- Размеры результата, входы в градациях серого и многоканальные изображения, а также недопустимые аргументы.
+- Тождественное изменение размера и сохранение постоянного изображения для каждого метода.
+- Сохранение дискретных значений при интерполяции ближайшим соседом.
+- Воспроизведение билинейным методом внутренней аффинной рампы.
+- Воспроизведение исходных отсчётов кардинальным ядром Keys.
+- Восстановление после предварительной фильтрации коэффициентов B-сплайна при обоих поддерживаемых граничных условиях.
+- Некардинальное центральное значение Mitchell и набор параметров, близкий к Catmull--Rom.
+- Точные средние по площади пикселей при уменьшении с отпечатком 2x2.
+- Все режимы границ и оба режима координат.
+- Значения метрик для известных изображений, включая SSIM для идентичных изображений и бесконечный PSNR.
 
-These tests verify implementation properties, not universal perceptual quality.
-For thesis conclusions, use diverse reference images, multiple degradation
-filters, multiple scale factors, repeated timings and visual inspection.
+Эти тесты проверяют свойства реализации, а не универсальное перцептивное качество. Для выводов в дипломной работе используйте разнообразные эталонные изображения, несколько фильтров ухудшения, несколько коэффициентов масштабирования, повторные замеры и визуальный анализ.

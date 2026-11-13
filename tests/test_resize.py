@@ -63,7 +63,7 @@ def test_bilinear_reproduces_linear_ramp_at_interior_coordinates():
     y, x = np.mgrid[:8, :9]
     image = 3.0 * x + 2.0 * y + 7.0
     result = resize(image, (18, 16), "bilinear")
-    # Exclude border positions where the chosen clamp extension changes the ramp.
+    # Исключаем граничные позиции, где выбранное продолжение clamp изменяет линейную рампу.
     for out_y in range(2, 14):
         src_y = (out_y + 0.5) * 8 / 16 - 0.5
         for out_x in range(2, 16):

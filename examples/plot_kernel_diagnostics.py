@@ -1,8 +1,8 @@
-"""Plot spatial kernels, numerical frequency responses and step responses.
+"""Построение графиков пространственных ядер, численных частотных характеристик и переходных откликов.
 
-Install the optional plotting dependency with ``pip install -e '.[plots]'``.
-All kernel and response values are calculated by this project; Matplotlib is
-used only to draw the resulting curves.
+Установите необязательную зависимость для построения графиков командой
+``pip install -e '.[plots]'``. Все значения ядер и откликов рассчитываются
+этим проектом; Matplotlib используется только для отрисовки полученных кривых.
 """
 
 from __future__ import annotations
@@ -19,11 +19,11 @@ def main() -> None:
     x = np.linspace(-4.5, 4.5, 9001)
     dx = x[1] - x[0]
     definitions = {
-        "Nearest box": (lambda z: kernels.nearest(z), 0.5),
-        "Bilinear": (kernels.linear, 1.0),
-        "Keys bicubic (a=-0.5)": (kernels.keys_cubic, 2.0),
+        "Ближайший сосед (прямоугольное ядро)": (lambda z: kernels.nearest(z), 0.5),
+        "Билинейная": (kernels.linear, 1.0),
+        "Бикубическая Keys (a=-0.5)": (kernels.keys_cubic, 2.0),
         "Mitchell (B=C=1/3)": (kernels.mitchell_netravali, 2.0),
-        "Cubic B-spline basis": (kernels.cubic_bspline, 2.0),
+        "Базис кубического B-сплайна": (kernels.cubic_bspline, 2.0),
         "Lanczos-3": (kernels.lanczos3, 3.0),
     }
     frequencies = np.linspace(0.0, 0.5, 401)
@@ -33,7 +33,7 @@ def main() -> None:
         values = kernel(x)
         axes[0].plot(x, values, label=label)
         inside = np.abs(x) <= support
-        # For symmetric real kernels, the Fourier transform is a cosine integral.
+        # Для симметричных вещественных ядер преобразование Фурье представляет собой косинусный интеграл.
         response = np.array([
             np.sum(values[inside] * np.cos(2.0 * np.pi * f * x[inside])) * dx
             for f in frequencies
@@ -45,9 +45,9 @@ def main() -> None:
         step = np.cumsum(values) * dx
         axes[2].plot(x, step, label=label)
 
-    axes[0].set(title="Spatial reconstruction kernels", xlabel="Distance (source pixels)", ylabel="K(x)")
-    axes[1].set(title="Numerical magnitude frequency response", xlabel="Cycles per source pixel", ylabel="|H(f)|")
-    axes[2].set(title="Numerical step response", xlabel="Position (source pixels)", ylabel="Cumulative response")
+    axes[0].set(title="Пространственные реконструкционные ядра", xlabel="Расстояние (исходные пиксели)", ylabel="K(x)")
+    axes[1].set(title="Численная амплитудная частотная характеристика", xlabel="Циклы на исходный пиксель", ylabel="|H(f)|")
+    axes[2].set(title="Численная переходная характеристика", xlabel="Положение (исходные пиксели)", ylabel="Накопленный отклик")
     axes[1].set_xlim(0.0, 0.5)
     axes[2].set_xlim(-3.5, 3.5)
     for axis in axes:
@@ -58,7 +58,7 @@ def main() -> None:
     fig.tight_layout()
     target = Path(__file__).resolve().parent / "kernel_diagnostics.png"
     fig.savefig(target, dpi=180)
-    print(f"Saved {target}")
+    print(f"График сохранён: {target}")
 
 
 if __name__ == "__main__":

@@ -1,123 +1,57 @@
-# Research and implementation sources
+# Источники исследований и реализации
 
-The project uses original scientific publications for mathematical claims and
-official software documentation/source for library-specific behaviour. The
-scratch code is independently written from the equations and algorithmic
-ideas below; source-code links are used to audit conventions, not as code to
-copy into this project.
+В проекте для математических утверждений используются оригинальные научные публикации, а для описания поведения библиотек — официальная документация и исходный код программ. Самостоятельный код написан по приведённым ниже уравнениям и алгоритмическим идеям; ссылки на исходный код нужны для проверки используемых соглашений, а не для копирования кода в этот проект.
 
-## 1. Sampling, reconstruction and signal processing
+## 1. Дискретизация, реконструкция и обработка сигналов
 
-1. **MIT, Foundations of Computer Vision**, Chapter 20, [Image Sampling and
-   Aliasing](https://visionbook.mit.edu/sampling_and_aliasing.html). Derives
-   sampling, aliasing, Nyquist, ideal sinc reconstruction and practical local
-   interpolation kernels.
-2. **MIT, Foundations of Computer Vision**, Chapter 21, [Downsampling and
-   Upsampling Images](https://visionbook.mit.edu/upsamplig_downsampling_2.html).
-   Explains low-pass filtering, decimation, zero insertion, reconstruction and
-   practical resizing. The book's [sampling and multiscale overview](https://visionbook.mit.edu/part_sampling_and_multiscale.html)
-   situates resizing in image pyramids and multiscale vision.
-3. **R. C. Gonzalez and R. E. Woods**, *Digital Image Processing*, 4th ed.,
-   Pearson, 2018. General textbook reference for sampling, geometric
-   transformations, spatial filtering and image resampling.
-4. **A. V. Oppenheim and R. W. Schafer**, *Discrete-Time Signal Processing*,
-   3rd ed., Pearson, 2010. General foundation for discrete-time systems,
-   convolution, frequency response, sampling and multirate signal processing.
+1. **MIT, Foundations of Computer Vision**, глава 20, [Image Sampling and Aliasing](https://visionbook.mit.edu/sampling_and_aliasing.html). Выводит понятия дискретизации, наложения спектров, частоты Найквиста, идеальной реконструкции sinc и практических локальных интерполяционных ядер.
+2. **MIT, Foundations of Computer Vision**, глава 21, [Downsampling and Upsampling Images](https://visionbook.mit.edu/upsamplig_downsampling_2.html). Объясняет низкочастотную фильтрацию, децимацию, вставку нулей, реконструкцию и практическое изменение размеров. В [обзоре дискретизации и многомасштабного анализа](https://visionbook.mit.edu/part_sampling_and_multiscale.html) изменение размера рассматривается в контексте пирамид изображений и многомасштабного компьютерного зрения.
+3. **R. C. Gonzalez и R. E. Woods**, *Digital Image Processing*, 4-е изд., Pearson, 2018. Общий учебный источник по дискретизации, геометрическим преобразованиям, пространственной фильтрации и передискретизации изображений.
+4. **A. V. Oppenheim и R. W. Schafer**, *Discrete-Time Signal Processing*, 3-е изд., Pearson, 2010. Общие основы дискретных систем, свёртки, частотных характеристик, дискретизации и многоскоростной обработки сигналов.
 
-## 2. Classical interpolation filters and spline theory
+## 2. Классические интерполяционные фильтры и теория сплайнов
 
-5. **R. G. Keys**, [“Cubic Convolution Interpolation for Digital Image
-   Processing”](https://doi.org/10.1109/TASSP.1981.1163711), *IEEE Transactions
-   on Acoustics, Speech, and Signal Processing*, 29(6), 1153–1160, 1981.
-   Original cubic-convolution interpolation derivation. An accessible scanned
-   copy is available [here](https://www.ncorr.com/download/publications/keysbicubic.pdf).
-6. **D. P. Mitchell and A. N. Netravali**, [“Reconstruction Filters in
-   Computer Graphics”](https://doi.org/10.1145/378456.378514), *Computer
-   Graphics* (SIGGRAPH), 22(4), 221–228, 1988. Two-parameter cubic filters and
-   their blur, aliasing, sharpness and ringing trade-offs. [Scanned paper](https://citeseerx.ist.psu.edu/document?doi=6731642027d82aa37289331a77f06c0871689c39&repid=rep1&type=pdf).
-7. **M. Unser**, [“Splines: A Perfect Fit for Signal and Image Processing”](https://doi.org/10.1109/79.799930),
-   *IEEE Signal Processing Magazine*, 16(6), 22–38, 1999. B-spline bases,
-   coefficient prefiltering, approximation order and signal processing.
-   [EPFL publication page](https://bigwww.epfl.ch/publications/unser9902.html).
-8. **P. Thévenaz, T. Blu, and M. Unser**, [“Interpolation Revisited”](https://doi.org/10.1109/42.875199),
-   *IEEE Transactions on Medical Imaging*, 19(7), 739–758, 2000. Unified
-   approximation-theoretic treatment of interpolation, generalized
-   interpolation, basis functions, prefiltering and approximation order.
-   [EPFL publication page](https://bigwww.epfl.ch/publications/thevenaz0002.html).
-9. **P. S. Heckbert**, [*Fundamentals of Texture Mapping and Image Warping*](https://www2.eecs.berkeley.edu/Pubs/TechRpts/1989/5504.html),
-   UC Berkeley Technical Report UCB/CSD-89-516, 1989. Geometric mappings and
-   spatially varying anti-alias filters.
-10. **X. Li and M. T. Orchard**, [“New Edge-Directed Interpolation”](https://doi.org/10.1109/83.951537),
-    *IEEE Transactions on Image Processing*, 10(10), 1521–1527, 2001.
-    Covariance-based adaptation to local image structure. [PubMed record](https://pubmed.ncbi.nlm.nih.gov/18255495/).
+5. **R. G. Keys**, [«Cubic Convolution Interpolation for Digital Image Processing»](https://doi.org/10.1109/TASSP.1981.1163711), *IEEE Transactions on Acoustics, Speech, and Signal Processing*, 29(6), 1153–1160, 1981. Оригинальный вывод интерполяции методом кубической свёртки. Доступная сканированная копия находится [здесь](https://www.ncorr.com/download/publications/keysbicubic.pdf).
+6. **D. P. Mitchell и A. N. Netravali**, [«Reconstruction Filters in Computer Graphics»](https://doi.org/10.1145/378456.378514), *Computer Graphics* (SIGGRAPH), 22(4), 221–228, 1988. Двухпараметрические кубические фильтры и компромиссы между размытием, наложением спектров, резкостью и звоном. [Скан статьи](https://citeseerx.ist.psu.edu/document?doi=6731642027d82aa37289331a77f06c0871689c39&repid=rep1&type=pdf).
+7. **M. Unser**, [«Splines: A Perfect Fit for Signal and Image Processing»](https://doi.org/10.1109/79.799930), *IEEE Signal Processing Magazine*, 16(6), 22–38, 1999. Базисные функции B-сплайнов, предварительная фильтрация коэффициентов, порядок аппроксимации и обработка сигналов. [Страница публикации EPFL](https://bigwww.epfl.ch/publications/unser9902.html).
+8. **P. Thévenaz, T. Blu и M. Unser**, [«Interpolation Revisited»](https://doi.org/10.1109/42.875199), *IEEE Transactions on Medical Imaging*, 19(7), 739–758, 2000. Единый теоретико-аппроксимационный подход к интерполяции, обобщённой интерполяции, базисным функциям, предварительной фильтрации и порядку аппроксимации. [Страница публикации EPFL](https://bigwww.epfl.ch/publications/thevenaz0002.html).
+9. **P. S. Heckbert**, [*Fundamentals of Texture Mapping and Image Warping*](https://www2.eecs.berkeley.edu/Pubs/TechRpts/1989/5504.html), технический отчёт UC Berkeley UCB/CSD-89-516, 1989. Геометрические отображения и пространственно изменяющиеся фильтры подавления наложения спектров.
+10. **X. Li и M. T. Orchard**, [«New Edge-Directed Interpolation»](https://doi.org/10.1109/83.951537), *IEEE Transactions on Image Processing*, 10(10), 1521–1527, 2001. Адаптация на основе ковариации к локальной структуре изображения. [Запись PubMed](https://pubmed.ncbi.nlm.nih.gov/18255495/).
 
-## 3. Quality assessment
+## 3. Оценка качества
 
-11. **Z. Wang, A. C. Bovik, H. R. Sheikh, and E. P. Simoncelli**, [“Image
-    Quality Assessment: From Error Visibility to Structural Similarity”](https://doi.org/10.1109/TIP.2003.819861),
-    *IEEE Transactions on Image Processing*, 13(4), 600–612, 2004. Original
-    SSIM paper. [Authors' publication page](https://www.ece.uwaterloo.ca/~z70wang/publications/ssim.html).
-12. **Wang et al.**, [SSIM research page](https://www.cns.nyu.edu/~lcv/research/ssim/).
-    Background, equations and reference implementation information.
+11. **Z. Wang, A. C. Bovik, H. R. Sheikh и E. P. Simoncelli**, [«Image Quality Assessment: From Error Visibility to Structural Similarity»](https://doi.org/10.1109/TIP.2003.819861), *IEEE Transactions on Image Processing*, 13(4), 600–612, 2004. Оригинальная статья о SSIM. [Страница публикации авторов](https://www.ece.uwaterloo.ca/~z70wang/publications/ssim.html).
+12. **Wang и соавторы**, [исследовательская страница SSIM](https://www.cns.nyu.edu/~lcv/research/ssim/). Справочная информация, уравнения и сведения о эталонной реализации.
 
-## 4. Official implementation documentation and source audits
+## 4. Официальная документация реализаций и аудит исходного кода
 
-13. **Pillow**, [Image resampling documentation](https://pillow.readthedocs.io/en/stable/reference/Image.html)
-    and [filter concepts](https://pillow.readthedocs.io/en/stable/handbook/concepts.html).
-    Documentation for Pillow's nearest, box, bilinear, bicubic and Lanczos
-    resampling options.
-14. **Pillow**, [C resampling implementation](https://github.com/python-pillow/Pillow/blob/main/src/libImaging/Resample.c).
-    Source audit for Pillow's Keys-style bicubic parameter and its radius-three
-    Lanczos filter. This project does not copy the C implementation.
-15. **OpenCV**, [Geometric Image Transformations](https://docs.opencv.org/4.x/da/d54/group__imgproc__transform.html).
-    Documents `resize`, reverse mapping and the supported interpolation flags.
-16. **OpenCV**, [4.x resize implementation](https://github.com/opencv/opencv/blob/4.x/modules/imgproc/src/resize.cpp).
-    Source audit for OpenCV's cubic-convolution parameter and Lanczos4
-    coefficient construction. This project does not copy the C++ code.
-17. **SciPy**, [`scipy.ndimage.zoom`](https://docs.scipy.org/doc/scipy/reference/generated/scipy.ndimage.zoom.html).
-    Documents spline interpolation order, prefiltering, boundary extension and
-    grid coordinate conventions. It is not a runtime dependency of the scratch
-    implementation.
-18. **scikit-image**, [image metrics documentation](https://scikit-image.org/docs/stable/api/skimage.metrics.html).
-    Reference for MSE, PSNR and SSIM options. This project's metric routines
-    are written directly in NumPy and scikit-image is not a dependency.
-19. **International Color Consortium**, [sRGB registry entry](https://registry.color.org/rgb-registry/srgb).
-    sRGB transfer function and colour encoding.
-20. **ImageMagick**, [Resampling Filters](https://usage.imagemagick.org/filter/).
-    Practical explanations of support, windowed-sinc filters, ringing, blur,
-    aliasing and resize-filter trade-offs.
-21. **Cambridge in Colour**, [Understanding Digital Image Interpolation](https://www.cambridgeincolour.com/tutorials/image-interpolation.htm).
-    Accessible practical overview of common interpolation methods and visual
-    effects.
+13. **Pillow**, [документация по передискретизации изображений](https://pillow.readthedocs.io/en/stable/reference/Image.html) и [описание концепций фильтров](https://pillow.readthedocs.io/en/stable/handbook/concepts.html). Документация по вариантам передискретизации Pillow: nearest, box, bilinear, bicubic и Lanczos.
+14. **Pillow**, [реализация передискретизации на C](https://github.com/python-pillow/Pillow/blob/main/src/libImaging/Resample.c). Анализ исходного кода параметра бикубического фильтра в стиле Keys и фильтра Lanczos с радиусом 3. Этот проект не копирует реализацию на C.
+15. **OpenCV**, [геометрические преобразования изображений](https://docs.opencv.org/4.x/da/d54/group__imgproc__transform.html). Документирует `resize`, обратное отображение координат и поддерживаемые флаги интерполяции.
+16. **OpenCV**, [реализация изменения размера в ветке 4.x](https://github.com/opencv/opencv/blob/4.x/modules/imgproc/src/resize.cpp). Анализ исходного кода параметра кубической свёртки OpenCV и построения коэффициентов Lanczos4. Этот проект не копирует код на C++.
+17. **SciPy**, [`scipy.ndimage.zoom`](https://docs.scipy.org/doc/scipy/reference/generated/scipy.ndimage.zoom.html). Документирует порядок сплайн-интерполяции, предварительную фильтрацию, расширение границ и соглашения о координатах сетки. Эта библиотека не является зависимостью самостоятельной реализации во время выполнения.
+18. **scikit-image**, [документация по метрикам изображений](https://scikit-image.org/docs/stable/api/skimage.metrics.html). Справочник по настройкам MSE, PSNR и SSIM. Метрики этого проекта написаны непосредственно на NumPy, scikit-image не является зависимостью.
+19. **International Color Consortium**, [запись реестра sRGB](https://registry.color.org/rgb-registry/srgb). Передаточная функция sRGB и кодирование цвета.
+20. **ImageMagick**, [фильтры передискретизации](https://usage.imagemagick.org/filter/). Практические объяснения области поддержки, оконных sinc-фильтров, звона, размытия, наложения спектров и компромиссов фильтров изменения размера.
+21. **Cambridge in Colour**, [понимание интерполяции цифровых изображений](https://www.cambridgeincolour.com/tutorials/image-interpolation.htm). Доступный практический обзор распространённых методов интерполяции и их визуальных эффектов.
 
-## 5. How to cite this project's implementation
+## 5. Как цитировать реализацию этого проекта
 
-The algorithm equations should be cited to the original publications above:
-Keys for cubic convolution, Mitchell--Netravali for their cubic family, Unser
-and Thévenaz/Blu/Unser for spline interpolation and prefiltering, and the
-sampling-theory sources for sinc reconstruction and anti-aliasing. Cite Pillow
-or OpenCV documentation only when describing those libraries' specific
-behaviour.
+Уравнения алгоритмов следует связывать с оригинальными публикациями выше: Keys — для кубической свёртки, Mitchell--Netravali — для их семейства кубических фильтров, Unser и Thévenaz/Blu/Unser — для сплайн-интерполяции и предварительной фильтрации коэффициентов, а источники по теории дискретизации — для реконструкции sinc и подавления наложения спектров. Документацию Pillow или OpenCV следует цитировать только при описании специфического поведения этих библиотек.
 
-The Python implementation in this repository is an independent implementation
-written for the study. It uses NumPy as the numeric array substrate; it does
-not incorporate copied implementation source from Pillow, OpenCV, SciPy or
-scikit-image. This does not remove the need to cite the mathematical works on
-which the methods are based.
+Реализация Python в этом репозитории — независимая реализация, написанная для данного исследования. В качестве числовой основы массивов используется NumPy; исходный код Pillow, OpenCV, SciPy или scikit-image не копировался. Это не отменяет необходимости цитировать математические работы, на которых основаны методы.
 
-## 6. Reproducibility notes
+## 6. Заметки о воспроизводимости
 
-For each experiment, record:
+Для каждого эксперимента записывайте:
 
-- Python, NumPy, Pillow and operating-system versions.
-- Source and destination dimensions and scale factors.
-- Exact method and parameters (for example Keys `a=-0.5`, Lanczos radius 3,
-  Mitchell `B=C=1/3`).
-- Coordinate mapping, boundary extension and anti-alias setting.
-- Degradation filter used to create low-resolution input.
-- Channel, alpha and colour-space treatment.
-- Number of warmups and repeated timings, CPU and machine load.
-- Metric settings, especially data range and SSIM window/covariance convention.
+- версии Python, NumPy, Pillow и операционной системы;
+- размеры исходного и целевого изображений и коэффициенты масштабирования;
+- точный метод и его параметры (например, Keys `a=-0.5`, радиус Lanczos 3, Mitchell `B=C=1/3`);
+- отображение координат, расширение границ и настройку подавления наложения спектров;
+- фильтр ухудшения, использованный для создания входа низкого разрешения;
+- обработку каналов, альфа-канала и цветового пространства;
+- количество прогревов и повторных замеров, процессор и загрузку машины;
+- настройки метрик, особенно диапазон данных и соглашения об окне/ковариации SSIM.
 
-The name “bicubic” alone is not a sufficient algorithm specification. Nor is
-“Lanczos” without the support radius and window convention.
+Одного названия «bicubic» недостаточно для спецификации алгоритма. То же относится к названию «Lanczos», если не указан радиус поддержки и способ оконной обработки.

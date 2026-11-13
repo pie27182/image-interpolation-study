@@ -1,4 +1,4 @@
-"""Comparative study of digital image interpolation algorithms."""
+"""Сравнительное исследование алгоритмов интерполяции цифровых изображений."""
 
 from .resize import METHODS, resize
 

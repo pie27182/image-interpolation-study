@@ -1,6 +1,6 @@
 cff-version: 1.2.0
-message: "If you use this project in academic work, please cite it and its algorithm references."
-title: "Comparative Analysis of Digital Image Interpolation Algorithms Using Python"
+message: "При использовании этого проекта в научной работе, пожалуйста, цитируйте его и источники алгоритмов."
+title: "Сравнительный анализ алгоритмов интерполяции цифровых изображений с использованием Python"
 version: 0.2.0
 year: 2026
 type: software

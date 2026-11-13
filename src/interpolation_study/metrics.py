@@ -1,8 +1,8 @@
-"""Image-quality metrics implemented directly with NumPy.
+"""Метрики качества изображения, реализованные непосредственно с помощью NumPy.
 
-SSIM here uses an unweighted square (uniform) local window and sample
-covariance correction.  This is an explicitly documented SSIM variant; it is
-not claimed to be bit-identical to every package's SSIM implementation.
+Здесь SSIM использует невзвешенное квадратное локальное окно (равномерное
+окно) и поправку на выборочную ковариацию. Это явно описанный вариант SSIM;
+не утверждается, что он побитово совпадает с реализацией любой библиотеки.
 """
 
 from __future__ import annotations
@@ -19,7 +19,7 @@ def peak_signal_to_noise_ratio(
     reference: np.ndarray, candidate: np.ndarray, data_range: float = 255.0
 ) -> float:
     if not np.isfinite(data_range) or data_range <= 0:
-        raise ValueError("data_range must be a positive finite number")
+        raise ValueError("data_range должен быть положительным конечным числом")
     mse = mean_squared_error(reference, candidate)
     if mse == 0.0:
         return float("inf")
@@ -32,22 +32,22 @@ def _validated_pair(
     raw_ref = np.asarray(reference)
     raw_test = np.asarray(candidate)
     if np.iscomplexobj(raw_ref) or np.iscomplexobj(raw_test):
-        raise TypeError("complex-valued images are not supported")
+        raise TypeError("изображения с комплексными значениями не поддерживаются")
     ref = np.asarray(raw_ref, dtype=np.float64)
     test = np.asarray(raw_test, dtype=np.float64)
     if ref.shape != test.shape:
-        raise ValueError(f"image shapes differ: {ref.shape} != {test.shape}")
+        raise ValueError(f"формы массивов изображений различаются: {ref.shape} != {test.shape}")
     if ref.ndim not in (2, 3):
-        raise ValueError("metrics expect a grayscale or channel image")
+        raise ValueError("метрики ожидают изображение в градациях серого или массив с каналами")
     if ref.size == 0:
-        raise ValueError("images must not be empty")
+        raise ValueError("изображения не должны быть пустыми")
     if not np.all(np.isfinite(ref)) or not np.all(np.isfinite(test)):
-        raise ValueError("images must contain only finite values")
+        raise ValueError("изображения должны содержать только конечные значения")
     return ref, test
 
 
 def _box_sum_axis(array: np.ndarray, width: int, axis: int) -> np.ndarray:
-    """Valid-window running sum along one axis using cumulative sums."""
+    """Скользящая сумма по допустимым окнам вдоль одной оси с помощью накопительных сумм."""
     moved = np.moveaxis(array, axis, 0)
     cumulative = np.cumsum(moved, axis=0, dtype=np.float64)
     zero_shape = list(cumulative.shape)
@@ -66,20 +66,21 @@ def structural_similarity(
     k1: float = 0.01,
     k2: float = 0.03,
 ) -> float:
-    """Compute mean local SSIM with a uniform odd-sized window.
+    """Вычислить среднюю локальную SSIM с равномерным окном нечётного размера.
 
-    For each valid window, local means, variances and covariance are computed
-    from box sums.  Sample covariance correction N/(N-1) is applied, as in the
-    common reference formulation. For RGB/RGBA arrays, channels are evaluated
-    independently and averaged; alpha is treated as an ordinary channel.
+    Для каждого допустимого окна локальные средние, дисперсии и ковариация
+    вычисляются по суммам в прямоугольном окне. Применяется поправка на
+    выборочную ковариацию N/(N-1), как в распространённой эталонной формуле.
+    Для массивов RGB/RGBA каналы вычисляются независимо и усредняются;
+    альфа-канал рассматривается как обычный канал.
     """
     ref, test = _validated_pair(reference, candidate)
     if not np.isfinite(data_range) or data_range <= 0:
-        raise ValueError("data_range must be a positive finite number")
+        raise ValueError("data_range должен быть положительным конечным числом")
     if not isinstance(win_size, int) or win_size < 3 or win_size % 2 == 0:
-        raise ValueError("win_size must be an odd integer greater than or equal to 3")
+        raise ValueError("win_size должен быть нечётным целым числом не меньше 3")
     if ref.shape[0] < win_size or ref.shape[1] < win_size:
-        raise ValueError("image dimensions must be at least win_size")
+        raise ValueError("размеры изображения должны быть не меньше win_size")
 
     if ref.ndim == 2:
         ref = ref[..., None]
@@ -113,12 +114,12 @@ def compare_images(
     data_range: float = 255.0,
     win_size: int = 7,
 ) -> dict[str, float]:
-    """Return MSE, PSNR and this package's documented uniform-window SSIM."""
+    """Вернуть MSE, PSNR и документированный в этом пакете вариант SSIM с равномерным окном."""
     ref, test = _validated_pair(reference, candidate)
     if not np.isfinite(data_range) or data_range <= 0:
-        raise ValueError("data_range must be a positive finite number")
+        raise ValueError("data_range должен быть положительным конечным числом")
     if not isinstance(win_size, int) or win_size < 3 or win_size % 2 == 0:
-        raise ValueError("win_size must be an odd integer greater than or equal to 3")
+        raise ValueError("win_size должен быть нечётным целым числом не меньше 3")
     mse = float(np.mean((ref - test) ** 2))
     psnr = float("inf") if mse == 0.0 else float(10.0 * np.log10(data_range**2 / mse))
     if min(ref.shape[:2]) < win_size:

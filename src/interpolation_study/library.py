@@ -1,7 +1,7 @@
-"""Optional Pillow reference implementations for the library-baseline stage.
+"""Необязательные эталонные реализации на Pillow для этапа библиотечного сравнения.
 
-This module is intentionally isolated from ``resize.py``.  The from-scratch
-resampler does not import or call Pillow.
+Этот модуль намеренно отделён от ``resize.py``. Самостоятельный ресэмплер
+не импортирует Pillow и не вызывает его функции.
 """
 
 from __future__ import annotations
@@ -20,12 +20,12 @@ PILLOW_METHODS = tuple(PILLOW_FILTERS)
 
 
 def resize_with_pillow(image: np.ndarray, size: tuple[int, int], method: str) -> np.ndarray:
-    """Resize with Pillow; only used as an optional external baseline."""
+    """Изменить размер средствами Pillow; используется только как необязательная внешняя базовая реализация."""
     if method not in PILLOW_FILTERS:
-        raise ValueError(f"Pillow baseline does not provide {method!r}; choose from {', '.join(PILLOW_METHODS)}")
+        raise ValueError(f"Базовая реализация Pillow не предоставляет {method!r}; выберите один из методов: {', '.join(PILLOW_METHODS)}")
     array = np.asarray(image)
     if array.ndim not in (2, 3):
-        raise ValueError("image must be grayscale or have channels in the last axis")
+        raise ValueError("изображение должно быть в градациях серого или иметь каналы по последней оси")
     if array.dtype != np.uint8:
         array = np.clip(np.rint(array), 0, 255).astype(np.uint8)
     squeeze_channel = array.ndim == 3 and array.shape[2] == 1
