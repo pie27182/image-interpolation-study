@@ -8,4 +8,7 @@ build/
 dist/
 results/
 .DS_Store
-\n# Скачанные и сгенерированные наборы данных не хранятся в Git.\ndata/synthetic/\ndata/external/\n
+
+# Скачанные и сгенерированные наборы данных не хранятся в Git.
+data/synthetic/
+data/external/
