@@ -70,12 +70,13 @@ $$
 where the normalized sinc is
 
 $$
- \mathrm{sinc}(u)=
- \left\{\begin{array}{ll}
- \dfrac{\sin(\pi u)}{\pi u},&u\ne0,
- 1,&u=0.
- \end{array}\right.
+\mathrm{sinc}(u) =
+\begin{cases}
+\dfrac{\sin(\pi u)}{\pi u}, & u \ne 0, \\\\
+1, & u = 0.
+\end{cases}
 $$
+
 
 For unit-spaced, two-dimensional samples, the separable ideal reconstruction is
 
