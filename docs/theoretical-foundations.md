@@ -225,12 +225,12 @@ This is a weighted average of the four corners of the containing cell. It is a l
 Keys derived a piecewise cubic convolution kernel. In normalized coordinates $r=|x|$, its one-dimensional form is
 
 $$
- K_a(x)=
- \left\{\begin{array}{ll}
- (a+2)r^3-(a+3)r^2+1,&0\le r<1,\\
- ar^3-5ar^2+8ar-4a,&1\le r<2,\\
- 0,&r\ge2.
- \end{array}\right.
+K_a(x) =
+\begin{cases}
+(a+2)r^3 - (a+3)r^2 + 1, & 0 \le r < 1, \\\\
+ar^3 - 5ar^2 + 8ar - 4a, & 1 \le r < 2, \\\\
+0, & r \ge 2.
+\end{cases}
 $$
 
 Keys obtains this family by imposing symmetry, compact support, interpolation at integer nodes, continuity constraints, and accuracy conditions. A Taylor-series argument selects $a=-\tfrac12$ for third-order convergence in the paper's construction; this parameter is often associated with Catmull–Rom cubic convolution. Other values are used by real libraries, producing visibly and numerically different results.
