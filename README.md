@@ -83,7 +83,7 @@ image-interpolation resize input.jpg output.png \
 Сначала создайте восемь синтетических тестовых изображений: градиент, шахматную решётку, импульс, наклонную границу, периодическую решётку, Zone Plate, звезду Siemens и частотный sweep. Файлы сохраняются в `data/synthetic/`, который исключён из Git. Описание внешних источников и лицензий — в [руководстве по тестовым наборам](docs/test-image-sources.md).
 
 ```bash
-python examples/generate_test_images.py --output-dir data/synthetic --size 512 --output-dir data/synthetic --size 512
+python examples/generate_test_images.py --output-dir data/synthetic --size 512
 ```
 
 Затем запустите тест качества и времени выполнения:
