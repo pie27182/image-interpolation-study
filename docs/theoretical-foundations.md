@@ -289,11 +289,11 @@ This explains why “cubic B-spline interpolation” is not the same method as K
 The Lanczos kernel is a windowed sinc. With radius $a>0$,
 
 $$
- K_{L,a}(x)=
- \left\{\begin{array}{ll}
- \mathrm{sinc}(x)\mathrm{sinc}(x/a),&|x|<a,\\
- 0,&|x|\ge a.
- \end{array}\right.
+K_{L,a}(x) =
+\begin{cases}
+\mathrm{sinc}(x)\mathrm{sinc}(x/a), & \lvert x \rvert < a, \\\\
+0, & \lvert x \rvert \ge a.
+\end{cases}
 $$
 
 Lanczos-3 uses $a=3$; in one dimension the kernel has finite radius three, and a separable two-dimensional version applies it along both axes. The window truncates the infinite sinc while retaining much of its frequency-selective behaviour. A wider support follows the ideal sinc more closely but requires more work. Oscillatory side lobes can cause ringing around high-contrast edges, especially when a sharp dark-to-light transition is present.
