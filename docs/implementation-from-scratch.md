@@ -51,7 +51,7 @@ $$
  \widetilde w_{j,i}=\frac{w_{j,i}}{\sum_k w_{j,k}}.
 $$
 
-Only integer samples in the effective support $|x_j-i|<Rq$ are included.
+Only integer samples in the effective support $\lvert x_j-i \rvert<Rq$ are included.
 The width grows during downscaling, so the resampler integrates a wider source
 neighbourhood before producing a more sparsely sampled output. The implementation
 precomputes the indices, validity flags and normalized weights for each axis.
@@ -86,7 +86,7 @@ anti-aliased reduction filter.
 The one-dimensional triangle kernel is
 
 $$
- K_{lin}(x)=\max(1-|x|,0).
+ K_{lin}(x)=\max(1-\lvert x \rvert,0).
 $$
 
 In two dimensions its product form uses the four surrounding source samples.
@@ -96,7 +96,7 @@ response attenuates fine detail.
 
 ### Keys bicubic / cubic convolution
 
-For $r=|x|$, Keys' kernel is
+For $r=\lvert x \rvert$, Keys' kernel is
 
 $$
  K_a(x)=\begin{cases}
@@ -122,7 +122,7 @@ $$
  \frac{(-B-6C)r^3+(6B+30C)r^2+(-12B-48C)r+(8B+24C)}{6},&1\le r<2,\\[3pt]
  0,&r\ge2,
  \end{cases}
- \qquad r=|x|.
+ \qquad r=\lvert x \rvert.
 $$
 
 The default $B=C=1/3$ is a non-cardinal reconstruction filter: its central
@@ -138,9 +138,9 @@ The centred cubic B-spline basis is
 
 $$
  \beta^3(x)=\begin{cases}
- \frac{4-6|x|^2+3|x|^3}{6},&|x|<1,\\
- \frac{(2-|x|)^3}{6},&1\le |x|<2,\\
- 0,&|x|\ge2.
+ \frac{4-6\lvert x \rvert^2+3\lvert x \rvert^3}{6},&\lvert x \rvert<1,\\
+ \frac{(2-\lvert x \rvert)^3}{6},&1\le \lvert x \rvert<2,\\
+ 0,&\lvert x \rvert\ge2.
  \end{cases}
 $$
 
@@ -183,8 +183,8 @@ $$
 
 $$
  K_{L,3}(x)=\begin{cases}
- \mathrm{sinc}(x)\mathrm{sinc}(x/3),&|x|<3,\\
- 0,&|x|\ge3.
+ \mathrm{sinc}(x)\mathrm{sinc}(x/3),&\lvert x \rvert<3,\\
+ 0,&\lvert x \rvert\ge3.
  \end{cases}
 $$
 
