@@ -70,13 +70,12 @@ $$
 where the normalized sinc is
 
 $$
-\mathrm{sinc}(u) =
-\begin{cases}
-\dfrac{\sin(\pi u)}{\pi u}, & u \ne 0, \\\\
-1, & u = 0.
-\end{cases}
+ \mathrm{sinc}(u)=
+ \left\{\begin{array}{ll}
+ \dfrac{\sin(\pi u)}{\pi u},&u\ne0,
+ 1,&u=0.
+ \end{array}\right.
 $$
-
 
 For unit-spaced, two-dimensional samples, the separable ideal reconstruction is
 
@@ -180,11 +179,11 @@ $$
 A centred one-dimensional box basis can be described (up to the tie convention at exactly half-integer positions) by
 
 $$
-\varphi_{\text{NN}}(x) =
-\begin{cases}
-1, & \lvert x \rvert < \tfrac{1}{2}, \\\\
-0, & \text{otherwise}.
-\end{cases}
+ \varphi_{NN}(x)=
+ \left\{\begin{array}{ll}
+ 1,&|x|<\tfrac12,\\
+ 0,&\text{otherwise}.
+ \end{array}\right.
 $$
 
 The reconstructed function is piecewise constant. It is exceptionally cheap and does not invent intermediate class values, which is why nearest-neighbour is appropriate for segmentation masks, label maps, categorical rasters, and pixel art. It gives blocky enlargements and jagged transformed edges for photographs, and point-sampling during reduction can alias badly.
@@ -225,12 +224,12 @@ This is a weighted average of the four corners of the containing cell. It is a l
 Keys derived a piecewise cubic convolution kernel. In normalized coordinates $r=|x|$, its one-dimensional form is
 
 $$
-K_a(x) =
-\begin{cases}
-(a+2)r^3 - (a+3)r^2 + 1, & 0 \le r < 1, \\\\
-ar^3 - 5ar^2 + 8ar - 4a, & 1 \le r < 2, \\\\
-0, & r \ge 2.
-\end{cases}
+ K_a(x)=
+ \left\{\begin{array}{ll}
+ (a+2)r^3-(a+3)r^2+1,&0\le r<1,\\
+ ar^3-5ar^2+8ar-4a,&1\le r<2,\\
+ 0,&r\ge2.
+ \end{array}\right.
 $$
 
 Keys obtains this family by imposing symmetry, compact support, interpolation at integer nodes, continuity constraints, and accuracy conditions. A Taylor-series argument selects $a=-\tfrac12$ for third-order convergence in the paper's construction; this parameter is often associated with Catmull–Rom cubic convolution. Other values are used by real libraries, producing visibly and numerically different results.
@@ -289,11 +288,11 @@ This explains why “cubic B-spline interpolation” is not the same method as K
 The Lanczos kernel is a windowed sinc. With radius $a>0$,
 
 $$
-K_{L,a}(x) =
-\begin{cases}
-\mathrm{sinc}(x)\mathrm{sinc}(x/a), & \lvert x \rvert < a, \\\\
-0, & \lvert x \rvert \ge a.
-\end{cases}
+ K_{L,a}(x)=
+ \left\{\begin{array}{ll}
+ \mathrm{sinc}(x)\mathrm{sinc}(x/a),&|x|<a,\\
+ 0,&|x|\ge a.
+ \end{array}\right.
 $$
 
 Lanczos-3 uses $a=3$; in one dimension the kernel has finite radius three, and a separable two-dimensional version applies it along both axes. The window truncates the infinite sinc while retaining much of its frequency-selective behaviour. A wider support follows the ideal sinc more closely but requires more work. Oscillatory side lobes can cause ringing around high-contrast edges, especially when a sharp dark-to-light transition is present.
