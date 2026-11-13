@@ -6,7 +6,9 @@ This chapter is a research-oriented introduction to the mathematics behind class
 
 A physical scene is not a matrix. A useful idealization is a continuous image or spatial signal
 
-$ f: \mathbb R^2\rightarrow\mathbb R^C, $
+$$
+f: \mathbb R^2\rightarrow\mathbb R^C, 
+$$
 
 where $(x,y)$ denotes spatial position and $C$ is the number of channels (one for grayscale, three for RGB, and so on). A digital image is a finite collection of values on a discrete lattice:
 
