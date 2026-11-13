@@ -99,11 +99,11 @@ response attenuates fine detail.
 For $r=|x|$, Keys' kernel is
 
 $$
- K_a(x)=\left\{\begin{array}{ll}
+ K_a(x)=\begin{cases}
  (a+2)r^3-(a+3)r^2+1,&0\le r<1,\\
  ar^3-5ar^2+8ar-4a,&1\le r<2,\\
  0,&r\ge2.
- \end{array}\right.
+ \end{cases}
 $$
 
 The default is $a=-0.5$; `keys_a` makes the parameter explicit. This is a
@@ -117,11 +117,11 @@ undershoot next to sharp transitions.
 The two-parameter cubic family is
 
 $$
- K_{B,C}(x)=\left\{\begin{array}{ll}
+ K_{B,C}(x)=\begin{cases}
  \frac{(12-9B-6C)r^3+(-18+12B+6C)r^2+(6-2B)}{6},&0\le r<1,\\[3pt]
  \frac{(-B-6C)r^3+(6B+30C)r^2+(-12B-48C)r+(8B+24C)}{6},&1\le r<2,\\[3pt]
  0,&r\ge2,
- \end{array}\right.
+ \end{cases}
  \qquad r=|x|.
 $$
 
@@ -137,11 +137,11 @@ other useful cubic behaviours; for example $B=0,C=1/2$ is Catmull--Rom-like.
 The centred cubic B-spline basis is
 
 $$
- \beta^3(x)=\left\{\begin{array}{ll}
+ \beta^3(x)=\begin{cases}
  \frac{4-6|x|^2+3|x|^3}{6},&|x|<1,\\
  \frac{(2-|x|)^3}{6},&1\le |x|<2,\\
  0,&|x|\ge2.
- \end{array}\right.
+ \end{cases}
 $$
 
 It is smooth and compactly supported, but it is not cardinal. Substituting raw
@@ -182,10 +182,10 @@ $$
 $$
 
 $$
- K_{L,3}(x)=\left\{\begin{array}{ll}
+ K_{L,3}(x)=\begin{cases}
  \mathrm{sinc}(x)\mathrm{sinc}(x/3),&|x|<3,\\
  0,&|x|\ge3.
- \end{array}\right.
+ \end{cases}
 $$
 
 The support radius is three source pixels. Windowing the ideal sinc makes the
