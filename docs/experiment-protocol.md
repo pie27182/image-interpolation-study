@@ -9,7 +9,7 @@
 Для проверки отдельных свойств дополните набор синтетическими примерами:
 
 ```bash
-python examples/generate_test_images.py
+python examples/generate_test_images.py --output-dir data/synthetic --size 512
 ```
 
 Скрипт создаёт восемь детерминированных изображений: градиент, контрастные границы, импульс, наклонную границу, периодическую решётку, Zone Plate, звезду Siemens и частотный sweep. Вызов с явным каталогом вывода: `python examples/generate_test_images.py --output-dir data/synthetic --size 512`. Для каждого внешнего исходного изображения запишите источник, лицензию и размеры. Проверенные внешние наборы и правовые ограничения описаны в [руководстве по наборам тестовых изображений](test-image-sources.md).
