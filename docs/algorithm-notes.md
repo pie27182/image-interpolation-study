@@ -33,15 +33,15 @@ signal-processing and approximation-theory discussion.
 For source length `S` and destination length `D`, the default half-pixel
 mapping is
 
-\[
+$$
  x_j=(j+1/2)S/D-1/2.
-\]
+$$
 
 An optional `align_corners` mapping is also available:
 
-\[
+$$
  x_j=j(S-1)/(D-1),\quad D>1.
-\]
+$$
 
 When `D=1`, the source centre is used. Coordinate conventions affect output
 alignment and must be recorded in comparisons.
