@@ -24,7 +24,7 @@
 - [Реализация с нуля](docs/implementation-from-scratch.md) — формулы, граничные условия и устройство алгоритмов на NumPy.
 - [Протокол экспериментов](docs/experiment-protocol.md) — подготовка данных и проведение сравнения.
 - [Источники](docs/research-sources.md) — научные публикации и документация библиотек.
-- [Краткие заметки](docs/algorithm-notes.md) — соглашения координат, фильтрация и режимы границ.
+- [Краткие заметки](docs/algorithm-notes.md) — соглашения координат, фильтрация и режимы границ.\n- [Аудит зависимостей](docs/dependency-audit.md) — какие библиотеки используются в scratch, CLI и визуализации.
 
 ## Установка
 
@@ -39,7 +39,23 @@ python -m pip install --upgrade pip
 python -m pip install -e '.[dev]'
 ```
 
-Основные зависимости — NumPy и Pillow. Для построения графиков установите дополнительную зависимость: `pip install -e '.[plots]'`.
+Вычислительное ядро `scratch` использует NumPy и стандартную библиотеку Python. Pillow нужна для чтения/записи файлов изображений и отдельного библиотечного сравнения. Для построения графиков установите дополнительную зависимость: `python -m pip install -e '.[plots]'`. Подробности — в [аудите зависимостей](docs/dependency-audit.md).
+
+## Справка командной строки
+
+Справка встроена в CLI на базе стандартного модуля Python `argparse`. Флаги `-h` и `--help` доступны для самой программы и каждой команды:
+
+```bash
+image-interpolation --help
+image-interpolation resize --help
+image-interpolation benchmark --help
+image-interpolation plot --help
+image-interpolation plot-kernels --help
+image-interpolation methods
+image-interpolation --version
+```
+
+Запуск `image-interpolation` без команды также показывает общую справку. Команда `methods` выводит описание алгоритмов и отмечает, какие из них доступны в Pillow.
 
 ## Изменение размера изображения
 
@@ -88,6 +104,29 @@ python examples/run_dataset_experiment.py data/images results/dataset \
 ```
 
 Скрипт проверит все изображения в каталоге и его подкаталогах, запустит все доступные методы NumPy и Pillow, сохранит отдельные результаты в подпапках и общую таблицу `results/dataset/results.csv`. Повторите эксперимент с другими коэффициентами масштабирования и фильтрами ухудшения. Не делайте вывод о лучшем методе по одному изображению или единственному сценарию ухудшения.
+
+### Визуализация результатов
+
+После команды `benchmark` или пакетного эксперимента постройте графики по CSV:
+
+```bash
+image-interpolation plot results/dataset/results.csv --output-dir results/dataset/plots
+```
+
+Будут созданы:
+
+- `psnr.png` — средний PSNR по изображениям;
+- `ssim.png` — средний SSIM по изображениям;
+- `runtime.png` — среднее медианное время выполнения по изображениям;
+- `summary.csv` — сводная таблица со средними значениями и стандартными отклонениями.
+
+Для анализа формы ядер, частотной характеристики и переходного отклика:
+
+```bash
+image-interpolation plot-kernels --output results/kernel_diagnostics.png
+```
+
+Обе команды визуализации требуют необязательный пакет Matplotlib (`python -m pip install -e '.[plots]'`). Он используется только для отрисовки: расчёт интерполяции и метрик выполняется кодом проекта.
 
 ## Тесты
 
