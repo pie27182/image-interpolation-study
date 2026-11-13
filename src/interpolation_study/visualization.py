@@ -164,11 +164,15 @@ def plot_benchmark_results(
         means = np.array([float(row[f"{metric}_mean"]) for row in summary])
         deviations = np.array([float(row[f"{metric}_stdev"]) for row in summary])
         valid = np.isfinite(means)
-        if not np.any(valid):
-            raise ValueError(f"В файле нет конечных значений метрики {metric}")
         fig, axis = plt.subplots(figsize=(max(9, len(summary) * 0.8), 5.5))
-        axis.bar(x[valid], means[valid], yerr=deviations[valid], capsize=3)
-        axis.set_xticks(x[valid], [labels[index] for index in x[valid]], rotation=35, ha="right")
+        if np.any(valid):
+            axis.bar(x[valid], means[valid], yerr=deviations[valid], capsize=3)
+            axis.set_xticks(x[valid], [labels[index] for index in x[valid]], rotation=35, ha="right")
+        else:
+            axis.text(
+                0.5, 0.5, f"Нет конечных значений метрики {metric}",
+                ha="center", va="center", transform=axis.transAxes,
+            )
         axis.set_title(title)
         axis.set_ylabel(ylabel)
         axis.grid(axis="y", alpha=0.25)
