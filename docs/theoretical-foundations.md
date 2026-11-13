@@ -71,10 +71,10 @@ where the normalized sinc is
 
 $$
  \mathrm{sinc}(u)=
- \left\{\begin{array}{ll}
- \dfrac{\sin(\pi u)}{\pi u},&u\ne0,
+ \begin{cases}
+ \dfrac{\sin(\pi u)}{\pi u},&u\ne0,\\
  1,&u=0.
- \end{array}\right.
+ \end{cases}
 $$
 
 For unit-spaced, two-dimensional samples, the separable ideal reconstruction is
@@ -180,10 +180,10 @@ A centred one-dimensional box basis can be described (up to the tie convention a
 
 $$
  \varphi_{NN}(x)=
- \left\{\begin{array}{ll}
+ \begin{cases}
  1,&|x|<\tfrac12,\\
  0,&\text{otherwise}.
- \end{array}\right.
+ \end{cases}
 $$
 
 The reconstructed function is piecewise constant. It is exceptionally cheap and does not invent intermediate class values, which is why nearest-neighbour is appropriate for segmentation masks, label maps, categorical rasters, and pixel art. It gives blocky enlargements and jagged transformed edges for photographs, and point-sampling during reduction can alias badly.
@@ -225,11 +225,11 @@ Keys derived a piecewise cubic convolution kernel. In normalized coordinates $r=
 
 $$
  K_a(x)=
- \left\{\begin{array}{ll}
+ \begin{cases}
  (a+2)r^3-(a+3)r^2+1,&0\le r<1,\\
  ar^3-5ar^2+8ar-4a,&1\le r<2,\\
  0,&r\ge2.
- \end{array}\right.
+ \end{cases}
 $$
 
 Keys obtains this family by imposing symmetry, compact support, interpolation at integer nodes, continuity constraints, and accuracy conditions. A Taylor-series argument selects $a=-\tfrac12$ for third-order convergence in the paper's construction; this parameter is often associated with Catmull–Rom cubic convolution. Other values are used by real libraries, producing visibly and numerically different results.
@@ -248,12 +248,11 @@ Mitchell and Netravali studied a two-parameter family of piecewise cubic reconst
 
 $$
 K_{B,C}(x)=\frac{1}{6}
-\left\{\begin{array}{ll}
+\begin{cases}
 (12-9B-6C)r^3+(-18+12B+6C)r^2+(6-2B),&0\le r<1,\\
-(-B-6C)r^3+(6B+30C)r^2\\
-\quad+(-12B-48C)r+(8B+24C),&1\le r<2,\\
+(-B-6C)r^3+(6B+30C)r^2+(-12B-48C)r+(8B+24C),&1\le r<2,\\
 0,&r\ge2.
-\end{array}\right.
+\end{cases}
 $$
 
 Different parameter choices trade blur, ringing, and alias rejection. The paper's well-known compromise is $(B,C)=(\tfrac13,\tfrac13)$; other choices include cubic B-spline-like smoothing and sharper Catmull–Rom-like interpolation. The paper emphasizes that filters should be judged not only by their fit at sample points but also by their frequency response and visible artifacts.
@@ -272,11 +271,11 @@ The cubic B-spline basis function is
 
 $$
 \beta^3(x)=
-\left\{\begin{array}{ll}
-\frac23-|x|^2+\frac{|x|^3}{2},&0\le|x|<1,
-\frac{(2-|x|)^3}{6},&1\le|x|<2,
+\begin{cases}
+\frac23-|x|^2+\frac{|x|^3}{2},&0\le|x|<1,\\
+\frac{(2-|x|)^3}{6},&1\le|x|<2,\\
 0,&|x|\ge2.
-\end{array}\right.
+\end{cases}
 $$
 
 A crucial distinction: the cubic B-spline basis is smooth and compactly supported, but it is **not interpolating**. If raw pixel samples are used directly as B-spline coefficients, the reconstructed spline generally does not pass exactly through the pixels; it is a smoothed approximation. To obtain an exact interpolating spline, one must first calculate coefficients by inverting the discrete sampling relation. In practice this is implemented by a digital prefilter, often using efficient recursive causal and anti-causal filters rather than explicitly inverting a large matrix.
@@ -289,10 +288,10 @@ The Lanczos kernel is a windowed sinc. With radius $a>0$,
 
 $$
  K_{L,a}(x)=
- \left\{\begin{array}{ll}
+ \begin{cases}
  \mathrm{sinc}(x)\mathrm{sinc}(x/a),&|x|<a,\\
  0,&|x|\ge a.
- \end{array}\right.
+ \end{cases}
 $$
 
 Lanczos-3 uses $a=3$; in one dimension the kernel has finite radius three, and a separable two-dimensional version applies it along both axes. The window truncates the infinite sinc while retaining much of its frequency-selective behaviour. A wider support follows the ideal sinc more closely but requires more work. Oscillatory side lobes can cause ringing around high-contrast edges, especially when a sharp dark-to-light transition is present.
