@@ -1,8 +1,18 @@
+import importlib.util
+from pathlib import Path
+
 import numpy as np
 import pytest
 from PIL import Image
 
-from examples.generate_test_images import generate_test_images
+
+GENERATOR_PATH = Path(__file__).resolve().parents[1] / "examples" / "generate_test_images.py"
+GENERATOR_SPEC = importlib.util.spec_from_file_location("generate_test_images", GENERATOR_PATH)
+if GENERATOR_SPEC is None or GENERATOR_SPEC.loader is None:
+    raise RuntimeError(f"Не удалось загрузить генератор: {GENERATOR_PATH}")
+GENERATOR_MODULE = importlib.util.module_from_spec(GENERATOR_SPEC)
+GENERATOR_SPEC.loader.exec_module(GENERATOR_MODULE)
+generate_test_images = GENERATOR_MODULE.generate_test_images
 
 
 EXPECTED_FILES = {
