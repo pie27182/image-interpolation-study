@@ -1,58 +1,39 @@
-# Comparative Analysis of Digital Image Interpolation Algorithms Using Python
+# Сравнительный анализ алгоритмов интерполяции цифровых изображений с использованием Python
 
-A reproducible research project for a thesis on classical digital image
-interpolation. Its central contribution is a transparent, independently
-written resampling implementation whose mathematical operations can be
-studied and compared with an established library.
+Воспроизводимый исследовательский проект для дипломной работы по классической интерполяции цифровых изображений. Его основная особенность — прозрачная, самостоятельно написанная реализация передискретизации, математические операции которой можно изучать и сравнивать с реализацией из известной библиотеки.
 
-## Two deliberately separate stages
+## Два намеренно разделённых этапа
 
-1. **Library baseline:** Pillow filters are used as a reference for the methods
-   that it provides.
-2. **From-scratch implementation:** interpolation kernels, coordinate
-   transforms, tap selection, edge handling, anti-aliasing, separable filtering,
-   B-spline coefficient prefiltering, area integration, and quality metrics
-   are implemented explicitly using NumPy.
+1. **Библиотечная базовая реализация:** фильтры Pillow используются в качестве эталона для тех методов, которые предоставляет библиотека.
+2. **Самостоятельная реализация с нуля:** интерполяционные ядра, преобразования координат, выбор отсчётов, обработка границ, подавление наложения спектров, сепарабельная фильтрация, предварительная фильтрация коэффициентов B-сплайна, интегрирование по площади и метрики качества реализованы явно с помощью NumPy.
 
-The scratch interpolation code does **not** call Pillow, OpenCV, SciPy,
-scikit-image, or another image interpolation/resizing API. Pillow is retained
-for image file I/O and the optional baseline only. The project does not copy
-code from those libraries; its equations and algorithms are based on the
-original papers and references in `docs/research-sources.md`.
+Самостоятельный код интерполяции **не вызывает** Pillow, OpenCV, SciPy, scikit-image или другой API интерполяции/изменения размера изображений. Pillow используется только для чтения и записи файлов изображений и в качестве необязательной базовой реализации для сравнения. Проект не копирует код этих библиотек: уравнения и алгоритмы основаны на оригинальных научных работах и источниках, перечисленных в `docs/research-sources.md`.
 
-## Implemented methods
+## Реализованные методы
 
-| Method | Mathematical model | Main properties |
+| Метод | Математическая модель | Основные свойства |
 |---|---|---|
-| Nearest neighbour | Closest sample | Very fast; discrete labels; blocky enlargement |
-| Bilinear | Triangle/hat kernel | Simple, nonnegative, smooth but soft |
-| Bicubic | Keys cubic convolution, `a=-0.5` | Cardinal cubic; sharp; may ring |
-| Mitchell--Netravali | Two-parameter cubic, default `B=C=1/3` | Non-cardinal reconstruction filter; blur/ringing compromise |
-| Cubic B-spline | Cubic B-spline plus coefficient prefilter | Smooth interpolating spline; prefilter is essential |
-| Lanczos-3 | Windowed sinc, radius 3 | Good detail retention; possible ringing |
-| Area | Exact pixel-footprint overlap | Explicit area averaging; especially useful for downsampling |
+| Ближайший сосед | Ближайший отсчёт | Очень быстрый; сохраняет дискретные метки; при увеличении даёт блочную структуру |
+| Билинейная интерполяция | Треугольное/шатровое ядро | Простая, неотрицательная и гладкая, но может давать размытость |
+| Бикубическая интерполяция | Кубическая свёртка Keys, `a=-0.5` | Кардинальное кубическое ядро; высокая резкость; возможно звоноподобное искажение |
+| Mitchell--Netravali | Двухпараметрическое кубическое ядро, по умолчанию `B=C=1/3` | Некардинальный реконструкционный фильтр; компромисс между размытием и звоном |
+| Кубический B-сплайн | Кубический B-сплайн и предварительная фильтрация коэффициентов | Гладкий интерполирующий сплайн; предварительная фильтрация обязательна |
+| Lanczos-3 | Оконная функция sinc, радиус 3 | Хорошо сохраняет детали; возможно звоноподобное искажение |
+| По площади (Area) | Точное перекрытие площадей пиксельных отпечатков | Явное усреднение по площади; особенно полезно при уменьшении |
 
-The repository also includes a generated comparison of the spatial kernels,
-approximate frequency responses and step responses:
+В репозитории также имеется автоматически построенное сравнение пространственных ядер, приближённых частотных характеристик и переходных характеристик:
 
-![Kernel and response diagnostics](examples/kernel_diagnostics.png)
+![Диагностика ядер и откликов](examples/kernel_diagnostics.png)
 
-The full derivations, mathematical connections, implementation conventions,
-limitations and research literature are in:
+Полные выводы формул, математические связи, соглашения реализации, ограничения и исследовательская литература приведены в следующих документах:
 
-- [`docs/theoretical-foundations.md`](docs/theoretical-foundations.md) — the
-  broad mathematical theory: sampling, Fourier analysis, reconstruction,
-  approximation theory, splines, anti-aliasing, colour, geometry and metrics.
-- [`docs/implementation-from-scratch.md`](docs/implementation-from-scratch.md)
-  — equations and step-by-step design of the actual NumPy implementation.
-- [`docs/algorithm-notes.md`](docs/algorithm-notes.md) — concise method and
-  reproducibility notes.
-- [`docs/research-sources.md`](docs/research-sources.md) — original papers,
-  books, official docs and implementation-source audits.
-- [`docs/experiment-protocol.md`](docs/experiment-protocol.md) — experimental
-  methodology for thesis work.
+- [`docs/theoretical-foundations.md`](docs/theoretical-foundations.md) — широкая математическая теория: дискретизация, анализ Фурье, реконструкция, теория приближений, сплайны, подавление наложения спектров, цвет, геометрия и метрики.
+- [`docs/implementation-from-scratch.md`](docs/implementation-from-scratch.md) — уравнения и пошаговое описание фактической реализации на NumPy.
+- [`docs/algorithm-notes.md`](docs/algorithm-notes.md) — краткие заметки о методах и воспроизводимости.
+- [`docs/research-sources.md`](docs/research-sources.md) — оригинальные статьи, книги, официальная документация и анализ исходного кода реализаций.
+- [`docs/experiment-protocol.md`](docs/experiment-protocol.md) — методика экспериментов для дипломной работы.
 
-## Project layout
+## Структура проекта
 
 ```text
 image-interpolation-study/
@@ -66,20 +47,20 @@ image-interpolation-study/
 ├── examples/
 │   └── generate_test_images.py
 ├── src/interpolation_study/
-│   ├── benchmark.py       # repeated quality/runtime experiments
-│   ├── cli.py             # command line interface
-│   ├── kernels.py         # explicit mathematical kernel formulas
-│   ├── library.py         # optional Pillow reference baseline
-│   ├── metrics.py         # NumPy MSE, PSNR and uniform-window SSIM
-│   └── resize.py          # NumPy-only interpolation and resampling
+│   ├── benchmark.py       # повторяющиеся эксперименты по качеству и времени выполнения
+│   ├── cli.py             # интерфейс командной строки
+│   ├── kernels.py         # явные математические формулы ядер
+│   ├── library.py         # необязательная эталонная реализация на Pillow
+│   ├── metrics.py         # MSE, PSNR и SSIM с равномерным окном на NumPy
+│   └── resize.py          # интерполяция и передискретизация только средствами NumPy
 ├── tests/
 ├── pyproject.toml
 └── README.md
 ```
 
-## Installation
+## Установка
 
-Python 3.10 or newer is required.
+Требуется Python версии 3.10 или новее.
 
 ```bash
 git clone https://github.com/<your-account>/image-interpolation-study.git
@@ -90,63 +71,58 @@ python -m pip install --upgrade pip
 python -m pip install -e '.[dev]'
 ```
 
-Dependencies are NumPy and Pillow. Pillow is for image I/O and the optional
-baseline; the `scratch` resizer and metrics use NumPy only. Matplotlib is an
-optional extra for any user-created plots: `pip install -e '.[plots]'`.
+Зависимости проекта — NumPy и Pillow. Pillow нужен для ввода-вывода изображений и необязательной базовой реализации; модуль изменения размера `scratch` и метрики используют только NumPy. Matplotlib — необязательная дополнительная зависимость для графиков, создаваемых пользователем: `pip install -e '.[plots]'`.
 
-## Resize an image
+## Изменение размера изображения
 
-From-scratch Keys bicubic enlargement:
+Увеличение с нуля бикубическим методом Keys:
 
 ```bash
 image-interpolation resize examples/input.jpg results/bicubic.png \
   --width 1200 --height 800 --method bicubic --implementation scratch
 ```
 
-From-scratch cubic B-spline interpolation:
+Интерполяция кубическим B-сплайном с нуля:
 
 ```bash
 image-interpolation resize examples/input.jpg results/bspline.png \
   --width 1200 --height 800 --method bspline3 --boundary reflect
 ```
 
-Area downsampling:
+Уменьшение методом усреднения по площади:
 
 ```bash
 image-interpolation resize examples/input.jpg results/half.png \
   --width 600 --height 400 --method area
 ```
 
-Optional Pillow baseline:
+Необязательная базовая реализация Pillow:
 
 ```bash
 image-interpolation resize examples/input.jpg results/pillow-bicubic.png \
   --width 1200 --height 800 --method bicubic --implementation pillow
 ```
 
-Available scratch methods: `nearest`, `bilinear`, `bicubic`, `mitchell`,
-`bspline3`, `lanczos3`, `area`.
+Доступные методы самостоятельной реализации: `nearest`, `bilinear`, `bicubic`, `mitchell`, `bspline3`, `lanczos3`, `area`.
 
-Additional controls:
+Дополнительные параметры:
 
-- `--boundary clamp|reflect|wrap|constant` (B-spline supports clamp/reflect).
-  Here `reflect` means whole-sample symmetry (index -1 maps to 1), matching
-  SciPy `mirror` / OpenCV `BORDER_REFLECT_101`, not SciPy `reflect`.
+- `--boundary clamp|reflect|wrap|constant` (B-сплайн поддерживает `clamp` и `reflect`). Здесь `reflect` означает симметрию относительно целого отсчёта (индекс -1 отображается в 1), как в SciPy `mirror` / OpenCV `BORDER_REFLECT_101`, а не SciPy `reflect`.
 - `--coordinate-mode half_pixel|align_corners`.
-- `--no-antialias` disables scale-aware kernel widening during reduction.
-- `--keys-a` selects the Keys cubic parameter.
-- `--mitchell-b` and `--mitchell-c` select Mitchell--Netravali parameters.
-- `--fill-value` controls the constant boundary value.
+- `--no-antialias` отключает расширение ядра с учётом масштаба при уменьшении.
+- `--keys-a` задаёт параметр кубического ядра Keys.
+- `--mitchell-b` и `--mitchell-c` задают параметры Mitchell--Netravali.
+- `--fill-value` задаёт постоянное значение за границами изображения.
 
-## Run a benchmark
+## Запуск теста производительности
 
-Generate deterministic synthetic images:
+Сгенерируйте детерминированные синтетические изображения:
 
 ```bash
 python examples/generate_test_images.py
 ```
 
-Run a benchmark against the synthetic edge image:
+Запустите тест на синтетическом изображении с границами:
 
 ```bash
 image-interpolation benchmark examples/synthetic_edges.png \
@@ -154,53 +130,27 @@ image-interpolation benchmark examples/synthetic_edges.png \
   --output-dir results/synthetic-edges
 ```
 
-The benchmark creates one common low-resolution input with the scratch
-implementation by default, applies every available Pillow method and every
-scratch method, saves reconstructed images, and writes `results.csv`. To
-explicitly use Pillow for the degradation step, add
-`--degradation-implementation pillow`. The CSV reports median/mean/standard deviation/minimum
-runtime, MSE, PSNR, the uniform-window SSIM variant, dimensions and degradation
-settings. Pillow offers no directly equivalent named Mitchell or B-spline
-baseline, so those methods are scratch-only in the comparison table.
+По умолчанию тест создаёт единый вход низкого разрешения с помощью самостоятельной реализации, применяет все доступные методы Pillow и все методы самостоятельной реализации, сохраняет восстановленные изображения и записывает `results.csv`. Чтобы явно использовать Pillow на этапе ухудшения/понижения разрешения, добавьте `--degradation-implementation pillow`. В CSV указываются медианное, среднее, стандартное отклонение и минимальное время выполнения, MSE, PSNR, вариант SSIM с равномерным окном, размеры изображений и параметры ухудшения. Pillow не предоставляет напрямую эквивалентных именованных методов Mitchell и B-сплайн, поэтому эти методы в таблице сравнения представлены только результатами самостоятельной реализации.
 
-**Research caution:** repeat the experiment with several degradation filters.
-A Lanczos-generated input can favour a Lanczos reconstruction; this is not
-evidence that Lanczos is universally best. Use multiple images, content classes
-and scale factors. The original high-resolution image is the known reference
-for synthetic degradation experiments, not a perfect ground truth for every
-real-world resizing task.
+**Предостережение для исследования:** повторяйте эксперимент с несколькими фильтрами ухудшения изображения. Вход, созданный с помощью Lanczos, может давать преимущество реконструкции Lanczos; это не доказывает, что Lanczos лучше во всех случаях. Используйте несколько изображений, классов содержимого и коэффициентов масштабирования. Исходное изображение высокого разрешения является известным эталоном для экспериментов с синтетическим ухудшением, но не идеальной эталонной истиной для любой реальной задачи изменения размера.
 
-## Tests
+## Тесты
 
 ```bash
 pytest -q
 ```
 
-Tests cover mathematical invariants, dimensions, boundaries, coordinate
-conventions, spline coefficient reconstruction, area averaging, and metrics.
-The CI workflow runs tests on supported Python versions.
+Тесты охватывают математические инварианты, размеры, границы, соглашения о координатах, восстановление коэффициентов сплайна, усреднение по площади и метрики. Рабочий процесс CI запускает тесты на поддерживаемых версиях Python.
 
-## Methodological limitations
+## Методологические ограничения
 
-- The implementation currently operates on scalar channels independently.
-  It does not perform linear-light colour conversion or alpha premultiplication
-  automatically. For physically meaningful colour averaging, decode sRGB to
-  linear light before interpolation; for RGBA, consider premultiplying colour
-  by alpha before filtering and unpremultiplying afterwards.
-- Mitchell--Netravali with `B=C=1/3` is a non-cardinal reconstruction filter.
-  It preserves constants but does not reproduce each input sample. A same-size
-  resize is special-cased as the identity.
-- The B-spline coefficient system has explicit finite-image whole-sample
-  symmetric `reflect` and `clamp` boundary models. Its prefilter is required;
-  applying the basis
-  directly to raw pixel samples is not cubic B-spline interpolation.
-- Area resampling integrates pixel footprints and is designed primarily for
-  reduction; it is not intended as a sharp photographic upscaler.
-- Coordinate maps, boundary models, anti-aliasing filters, colour treatment,
-  rounding and precision all affect results. Record them in thesis experiments.
-- MSE, PSNR and SSIM are not complete perceptual models. Include visual
-  inspection and discuss aliasing, blur, ringing, edge sharpness and texture.
+- В текущей реализации каждый скалярный канал обрабатывается независимо. Автоматическое преобразование цвета в линейный свет и предварительное умножение RGB на альфа-канал не выполняются. Для физически осмысленного усреднения цветов декодируйте sRGB в линейный свет до интерполяции; для RGBA рассмотрите предварительное умножение цвета на альфа-канал перед фильтрацией и обратное деление после неё.
+- Mitchell--Netravali при `B=C=1/3` — некардинальный реконструкционный фильтр. Он сохраняет константы, но не воспроизводит каждый входной отсчёт. Изменение размера без изменения размеров изображения специально обрабатывается как тождественное преобразование.
+- Система коэффициентов B-сплайна явно задаёт для конечного изображения модели границ с симметричным отражением относительно целого отсчёта `reflect` и прижатием к краю `clamp`. Предварительная фильтрация обязательна: непосредственное применение базисной функции к исходным пиксельным отсчётам не является кубической B-сплайн-интерполяцией.
+- Передискретизация по площади интегрирует пиксельные отпечатки и предназначена прежде всего для уменьшения; она не рассчитана на резкое увеличение фотографий.
+- Карты координат, модели границ, фильтры подавления наложения спектров, обработка цвета, округление и точность влияют на результат. Фиксируйте эти параметры в экспериментах для дипломной работы.
+- MSE, PSNR и SSIM не являются полноценными моделями восприятия. Добавляйте визуальный анализ и обсуждайте наложение спектров, размытость, звон, резкость границ и текстуру.
 
-## License
+## Лицензия
 
-MIT. See `LICENSE`.
+MIT. См. файл `LICENSE`.

@@ -5,14 +5,14 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "image-interpolation-study"
 version = "0.2.0"
-description = "A research project implementing classical image interpolation from mathematical first principles."
+description = "Исследовательский проект по реализации классической интерполяции изображений с математических первых принципов."
 readme = "README.md"
 requires-python = ">=3.10"
 license = { text = "MIT" }
 authors = [{ name = "Image Interpolation Study" }]
 dependencies = [
   "numpy>=1.24",
-  "Pillow>=10.0",  # image file I/O and optional library baseline only
+  "Pillow>=10.0",  # только ввод-вывод файлов изображений и необязательная библиотечная базовая реализация
 ]
 
 [project.optional-dependencies]

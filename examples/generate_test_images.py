@@ -1,4 +1,4 @@
-"""Generate deterministic synthetic images for interpolation experiments."""
+"""Генерация детерминированных синтетических изображений для экспериментов по интерполяции."""
 
 from pathlib import Path
 
@@ -35,7 +35,7 @@ def main() -> None:
     grating_rgb = np.repeat(grating[..., None], 3, axis=2)
     Image.fromarray(grating_rgb).save(output / "synthetic_grating.png")
 
-    print(f"Generated five deterministic test images in {output}")
+    print(f"Созданы пять детерминированных тестовых изображений в {output}")
 
 
 if __name__ == "__main__":

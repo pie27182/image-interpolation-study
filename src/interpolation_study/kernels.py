@@ -1,7 +1,7 @@
-"""Scalar reconstruction kernels used by the from-scratch resampler.
+"""Скалярные реконструкционные ядра для самостоятельного ресэмплера.
 
-Only NumPy's elementary array operations are used.  No image-resizing API is
-called anywhere in this module.
+Используются только базовые операции с массивами NumPy. В этом модуле
+не вызывается ни один API изменения размера изображений.
 """
 
 from __future__ import annotations
@@ -10,18 +10,18 @@ import numpy as np
 
 
 def nearest(distance: np.ndarray) -> np.ndarray:
-    """Unit-width box reconstruction kernel (mainly for analysis/plots)."""
+    """Реконструкционное ядро-прямоугольник единичной ширины (в основном для анализа и графиков)."""
     return (np.abs(distance) < 0.5).astype(np.float64)
 
 
 def linear(distance: np.ndarray) -> np.ndarray:
-    """Linear/hat kernel, support radius 1."""
+    """Линейное/треугольное ядро с радиусом поддержки 1."""
     x = np.abs(np.asarray(distance, dtype=np.float64))
     return np.maximum(1.0 - x, 0.0)
 
 
 def keys_cubic(distance: np.ndarray, a: float = -0.5) -> np.ndarray:
-    """Keys' cubic-convolution kernel (a=-0.5 is Catmull-Rom-like)."""
+    """Ядро кубической свёртки Keys (значение a=-0.5 близко к варианту Catmull--Rom)."""
     x = np.abs(np.asarray(distance, dtype=np.float64))
     x2 = x * x
     x3 = x2 * x
@@ -33,10 +33,11 @@ def keys_cubic(distance: np.ndarray, a: float = -0.5) -> np.ndarray:
 def mitchell_netravali(
     distance: np.ndarray, b: float = 1.0 / 3.0, c: float = 1.0 / 3.0
 ) -> np.ndarray:
-    """Mitchell-Netravali family of cubic reconstruction filters.
+    """Семейство кубических реконструкционных фильтров Mitchell--Netravali.
 
-    The common compromise is B=C=1/3. Unlike Keys cubic convolution, this
-    default is not cardinal: its value at the origin is 8/9, not 1.
+    Распространённый компромиссный вариант использует B=C=1/3. В отличие
+    от кубической свёртки Keys, этот вариант не является кардинальным:
+    значение в начале координат равно 8/9, а не 1.
     """
     x = np.abs(np.asarray(distance, dtype=np.float64))
     x2 = x * x
@@ -56,10 +57,11 @@ def mitchell_netravali(
 
 
 def cubic_bspline(distance: np.ndarray) -> np.ndarray:
-    """Centered cubic B-spline basis function, support radius 2.
+    """Базисная функция центрированного кубического B-сплайна с радиусом поддержки 2.
 
-    A B-spline basis is not cardinal.  The resampler therefore prefilters the
-    sample array to obtain spline coefficients before evaluating this basis.
+    Базис B-сплайна не является кардинальным. Поэтому перед вычислением
+    этой функции ресэмплер предварительно фильтрует массив отсчётов и
+    получает коэффициенты сплайна.
     """
     x = np.abs(np.asarray(distance, dtype=np.float64))
     x2 = x * x
@@ -69,14 +71,14 @@ def cubic_bspline(distance: np.ndarray) -> np.ndarray:
 
 
 def sinc(distance: np.ndarray) -> np.ndarray:
-    """Normalized sinc, sin(pi*x)/(pi*x), with the removable limit at zero."""
+    """Нормированная функция sinc, sin(pi*x)/(pi*x), с устранимым пределом в нуле."""
     return np.sinc(np.asarray(distance, dtype=np.float64))
 
 
 def lanczos(distance: np.ndarray, radius: int = 3) -> np.ndarray:
-    """Windowed-sinc (Lanczos) kernel with a configurable integer radius."""
+    """Оконное ядро sinc (Lanczos) с настраиваемым целочисленным радиусом."""
     if radius < 1:
-        raise ValueError("Lanczos radius must be a positive integer")
+        raise ValueError("радиус Lanczos должен быть положительным целым числом")
     x = np.asarray(distance, dtype=np.float64)
     ax = np.abs(x)
     values = sinc(x) * sinc(x / float(radius))
@@ -84,5 +86,5 @@ def lanczos(distance: np.ndarray, radius: int = 3) -> np.ndarray:
 
 
 def lanczos3(distance: np.ndarray) -> np.ndarray:
-    """Convenience wrapper for the radius-three Lanczos kernel."""
+    """Удобная обёртка для ядра Lanczos с радиусом три."""
     return lanczos(distance, radius=3)

@@ -1,73 +1,73 @@
-# Digital Image Interpolation and Resampling: Theoretical Foundations
+# Интерполяция и передискретизация цифровых изображений: теоретические основы
 
-This chapter is a research-oriented introduction to the mathematics behind classical digital image interpolation. It is intended to support a thesis comparing reconstruction methods and their implementations. It is not a claim that one filter is universally best: the appropriate method depends on the sampling model, scale change, image content, quality criterion, and implementation conventions.
+В этой главе представлено ориентированное на исследовательскую работу введение в математику классической интерполяции цифровых изображений. Материал предназначен для поддержки дипломной работы, в которой сравниваются методы реконструкции и их программные реализации. Здесь не утверждается, что какой-либо фильтр универсально лучше остальных: подходящий метод зависит от модели дискретизации, изменения масштаба, содержимого изображения, критерия качества и соглашений реализации.
 
-## 1. What problem does interpolation solve?
+## 1. Какую задачу решает интерполяция?
 
-A physical scene is not a matrix. A useful idealization is a continuous image or spatial signal
+Физическая сцена не является матрицей. Удобная идеализация — непрерывное изображение или пространственный сигнал
 
 $$
-f: \mathbb R^2\rightarrow\mathbb R^C, 
+f: \mathbb R^2\rightarrow\mathbb R^C,
 $$
 
-where $(x,y)$ denotes spatial position and $C$ is the number of channels (one for grayscale, three for RGB, and so on). A digital image is a finite collection of values on a discrete lattice:
+где $(x,y)$ обозначает положение в пространстве, а $C$ — количество каналов (один для изображения в градациях серого, три для RGB и так далее). Цифровое изображение — конечный набор значений на дискретной решётке:
 
 $$
  I[i,j,c],\qquad i=0,\ldots,W-1,\quad j=0,\ldots,H-1.
 $$
 
-The digital array alone does not tell us what happens between its samples. To rotate, scale, warp, or otherwise transform the image, an algorithm needs a model of the underlying continuous image. **Interpolation** constructs or evaluates such a model at non-integer coordinates.
+Сам по себе цифровой массив не сообщает, что происходит между его отсчётами. Чтобы повернуть, масштабировать, деформировать или иным образом преобразовать изображение, алгоритму нужна модель лежащего в его основе непрерывного изображения. **Интерполяция** строит такую модель или вычисляет её значение в координатах, не являющихся целыми числами.
 
-Three operations should be distinguished:
+Следует различать три операции:
 
-- **Sampling** converts a continuous signal into discrete measurements.
-- **Interpolation/reconstruction** estimates a continuous signal from discrete measurements, or evaluates an estimate at locations where no sample was recorded.
-- **Resampling** evaluates an image on a new grid. Upscaling is usually dominated by interpolation; downscaling also requires low-pass filtering to prevent aliasing.
+- **Дискретизация (sampling)** преобразует непрерывный сигнал в дискретные измерения.
+- **Интерполяция/реконструкция** оценивает непрерывный сигнал по дискретным измерениям или вычисляет оценку в местах, где отсчёт не был записан.
+- **Передискретизация (resampling)** вычисляет изображение на новой сетке. При увеличении обычно преобладает задача интерполяции; при уменьшении также требуется низкочастотная фильтрация для предотвращения наложения спектров.
 
-Interpolation does not recover scene detail that was never recorded. It makes a mathematically or visually motivated estimate from the available samples. Super-resolution is a different, more ambitious problem: it uses additional assumptions, learned priors, multiple frames, or other information to infer plausible high-frequency detail.
+Интерполяция не восстанавливает детали сцены, которые никогда не были записаны. Она строит математически или визуально обоснованную оценку по имеющимся отсчётам. Сверхразрешение (super-resolution) — другая, более сложная задача: для вывода правдоподобных высокочастотных деталей используются дополнительные предположения, обученные априорные модели, несколько кадров или иная информация.
 
-There are also two useful pixel models. In a point-sample model, $I[i,j]$ approximates the continuous image at the sample centre. In an area-sample model, a pixel represents an integral or average over a finite footprint. A real camera sensor has a finite photosensitive area and an optical point-spread function, so its measurement process is more elaborate than ideal point sampling. A resizing algorithm must choose which model it is approximating; area/box reduction is especially natural when input values are interpreted as pixel-area averages.
+Также полезно различать две модели пикселя. В модели точечных отсчётов $I[i,j]$ приближает непрерывное изображение в центре отсчёта. В модели площадных отсчётов пиксель представляет интеграл или среднее значение по конечной области. Реальная камера имеет сенсор с конечной светочувствительной площадью и оптической функцией рассеяния точки, поэтому процесс измерения сложнее идеальной точечной дискретизации. Алгоритм изменения размера должен выбрать, какую модель он приближает; уменьшение методом area/box особенно естественно, когда входные значения интерпретируются как средние по площади пикселя.
 
-## 2. Sampling theory and the Nyquist–Shannon theorem
+## 2. Теория дискретизации и теорема Найквиста—Шеннона
 
-### 2.1 Sampling a continuous signal
+### 2.1 Дискретизация непрерывного сигнала
 
-For a one-dimensional signal $f(x)$ sampled at spacing $T$, ideal point sampling produces
+Для одномерного сигнала $f(x)$, дискретизируемого с шагом $T$, идеальная точечная дискретизация даёт
 
 $$
  f_s[n]=f(nT).
 $$
 
-An impulse-train representation is
+Представление через последовательность импульсов имеет вид
 
 $$
  f_{\delta}(x)=f(x)\sum_{n\in\mathbb Z}\delta(x-nT).
 $$
 
-Multiplication by a periodic impulse train in the spatial domain creates periodic replicas of the signal spectrum in the Fourier domain. If those replicas overlap, different continuous frequencies become indistinguishable after sampling. This is **aliasing**. In images it can appear as jagged diagonal edges, false patterns, moiré, or texture that changes its apparent orientation or frequency.
+Умножение на периодическую последовательность импульсов в пространственной области создаёт периодические копии спектра сигнала в области Фурье. Если эти копии перекрываются, разные непрерывные частоты после дискретизации становятся неразличимыми. Это явление называется **наложением спектров (aliasing)**. На изображениях оно проявляется в виде ступенчатых диагональных границ, ложных узоров, муара или текстур, видимая ориентация и частота которых меняются.
 
-### 2.2 Nyquist condition
+### 2.2 Условие Найквиста
 
-Let the continuous signal be band-limited, with no spectral energy above angular frequency $\omega_{\max}$. Perfect reconstruction is possible under the ideal assumptions when the sampling angular frequency satisfies
+Пусть непрерывный сигнал ограничен по полосе, то есть не содержит спектральной энергии выше угловой частоты $\omega_{\max}$. При идеальных предположениях точная реконструкция возможна, если угловая частота дискретизации удовлетворяет условию
 
 $$
  \omega_s=\frac{2\pi}{T}>2\omega_{\max}.
 $$
 
-Equivalently, the sampling period must be shorter than half the period of the highest frequency component. The corresponding Nyquist frequency is one half cycle per sample in normalized spatial units.
+Иными словами, период дискретизации должен быть меньше половины периода самой высокой частотной составляющей. Соответствующая частота Найквиста равна половине цикла на отсчёт в нормированных пространственных единицах.
 
-The theorem is powerful but its assumptions are important: exact band limitation, an infinite signal or ideal boundary treatment, exact samples, and exact arithmetic. A finite photograph is not strictly band-limited. Sharp edges and fine detail have broad spectra, and a finite image has boundaries. Thus practical image resizing approximates the ideal theory rather than satisfying it exactly.
+Теорема очень важна, но её предположения существенны: точное ограничение полосы, бесконечный сигнал или идеальная обработка границ, точные отсчёты и точная арифметика. Конечная фотография строго не ограничена по полосе. Резкие границы и мелкие детали имеют широкий спектр, а конечное изображение обладает границами. Поэтому практическое изменение размера изображений лишь приближает идеальную теорию, а не удовлетворяет ей в точности.
 
-### 2.3 Ideal sinc reconstruction
+### 2.3 Идеальная реконструкция sinc
 
-Under the band-limited assumptions, the one-dimensional Whittaker–Shannon reconstruction formula is
+При предположениях об ограниченности полосы одномерная формула реконструкции Уиттакера—Шеннона имеет вид
 
 $$
  f_r(x)=\sum_{n=-\infty}^{\infty} f_s[n]\,
  \mathrm{sinc}\!\left(\frac{x}{T}-n\right),
 $$
 
-where the normalized sinc is
+где нормированная функция sinc задаётся выражением
 
 ```math
  \mathrm{sinc}(u)=
@@ -77,132 +77,132 @@ where the normalized sinc is
  \end{cases}
 ```
 
-For unit-spaced, two-dimensional samples, the separable ideal reconstruction is
+Для двумерных отсчётов с единичным шагом сепарабельная идеальная реконструкция имеет вид
 
 $$
  \widehat I(x,y)=\sum_{i\in\mathbb Z}\sum_{j\in\mathbb Z}
  I[i,j]\,\mathrm{sinc}(x-i)\mathrm{sinc}(y-j).
 $$
 
-The sinc is an ideal interpolating kernel: it equals one at zero and zero at every other integer. It preserves every frequency in the representable baseband and rejects frequencies outside it. Its limitations are practical: it has infinite support, decays slowly, requires infinitely many samples in theory, and its oscillatory side lobes can cause ringing when a finite approximation is used. MIT's sampling chapter derives this ideal reconstruction and explains why local kernels are used in practice.
+Функция sinc — идеальное интерполяционное ядро: в нуле она равна единице, а во всех остальных целочисленных точках равна нулю. Она сохраняет все частоты в представимой базовой полосе и подавляет частоты за её пределами. На практике у неё есть ограничения: бесконечная область поддержки, медленное затухание, теоретическая необходимость бесконечного числа отсчётов и колебательные боковые лепестки, способные вызывать звон при использовании конечного приближения. В главе MIT о дискретизации выводится эта идеальная реконструкция и объясняется, почему на практике применяются локальные ядра.
 
-### 2.4 Frequency-domain view of resampling
+### 2.4 Частотное представление передискретизации
 
-A reconstruction kernel has a frequency response $H(\omega)$, the Fourier transform of its spatial impulse response. Its shape predicts much of its visual behaviour:
+Реконструкционное ядро имеет частотную характеристику $H(\omega)$ — преобразование Фурье его пространственной импульсной характеристики. Её форма во многом предсказывает визуальное поведение:
 
-- A response that rolls off too early attenuates detail and produces blur.
-- Weak stop-band rejection allows high frequencies to fold into the output band and produce aliasing.
-- Sharp transitions and truncated oscillatory kernels can produce side lobes and ringing.
-- Passband ripple can produce variations in contrast or fine repeating patterns.
+- Слишком ранний спад характеристики подавляет детали и вызывает размытие.
+- Слабое подавление в полосе задерживания позволяет высоким частотам складываться в выходную полосу, вызывая наложение спектров.
+- Резкие переходы и усечённые колебательные ядра могут создавать боковые лепестки и звон.
+- Пульсации в полосе пропускания могут вызывать колебания контраста или мелких повторяющихся узоров.
 
-No finite-support kernel perfectly achieves the ideal brick-wall low-pass response. Kernel selection is therefore a trade-off among spatial support, passband fidelity, stop-band attenuation, smoothness, and computational cost.
+Ни одно ядро с конечной областью поддержки не может идеально реализовать идеальный низкочастотный фильтр с прямоугольной характеристикой. Поэтому выбор ядра — компромисс между пространственной поддержкой, точностью в полосе пропускания, подавлением в полосе задерживания, гладкостью и вычислительной стоимостью.
 
-## 3. A general mathematical model of interpolation
+## 3. Общая математическая модель интерполяции
 
-### 3.1 Basis-function reconstruction
+### 3.1 Реконструкция с помощью базисных функций
 
-A broad family of linear reconstruction methods can be expressed as
+Широкое семейство линейных методов реконструкции можно выразить формулой
 
 $$
- f_r(x)=\sum_{k\in\mathbb Z}c[k]\,\varphi(x-k),
+ f_r(x)=\sum_{k\in\mathbb Z}c[k],\varphi(x-k),
 $$
 
-where $\varphi$ is a basis or reconstruction function and $c[k]$ are expansion coefficients. For an interpolating basis,
+где $\varphi$ — базисная или реконструкционная функция, а $c[k]$ — коэффициенты разложения. Для интерполирующего базиса
 
 $$
  \varphi(n)=\delta[n]
  \quad\Longrightarrow\quad c[k]=f_s[k].
 $$
 
-The reconstructed function then passes through the input samples. This is the familiar cardinal-interpolation case.
+Восстановленная функция в таком случае проходит через исходные отсчёты. Это классический случай кардинальной интерполяции.
 
-For a non-interpolating basis, the coefficients are not generally the sample values. At the integer sample locations,
+Для неинтерполирующего базиса коэффициенты в общем случае не равны значениям отсчётов. В целочисленных точках
 
 $$
  f_s[n]=\sum_k c[k]\,\varphi(n-k).
 $$
 
-This is a linear system. In matrix notation, $\mathbf f=\mathbf P\mathbf c$, so the coefficients must be computed as $\mathbf c=\mathbf P^{-1}\mathbf f$, subject to suitable boundary conditions. That prefiltering step is central to correct B-spline interpolation.
+Это система линейных уравнений. В матричной форме $\mathbf f=\mathbf P\mathbf c$, поэтому коэффициенты нужно вычислить как $\mathbf c=\mathbf P^{-1}\mathbf f$ при подходящих граничных условиях. Этот этап предварительной фильтрации принципиально важен для корректной интерполяции B-сплайнами.
 
-For a separable two-dimensional basis,
+Для сепарабельного двумерного базиса
 
 $$
  I_r(x,y)=\sum_i\sum_j c[i,j]\,
  \varphi_x(x-i)\varphi_y(y-j).
 $$
 
-If the same one-dimensional kernel is used on both axes, then $\varphi_x=\varphi_y=\varphi$. The separable form allows a two-dimensional operation to be performed as one horizontal pass followed by one vertical pass.
+Если на обеих осях используется одно и то же одномерное ядро, то $\varphi_x=\varphi_y=\varphi$. Сепарабельная форма позволяет выполнить двумерную операцию в виде горизонтального прохода, за которым следует вертикальный.
 
-### 3.2 Kernel conditions and useful properties
+### 3.2 Условия и полезные свойства ядер
 
-Common design conditions include:
+К распространённым условиям проектирования относятся:
 
-1. **Interpolation:** $\varphi(0)=1$ and $\varphi(n)=0$ for every nonzero integer $n$.
-2. **Symmetry:** $\varphi(x)=\varphi(-x)$, avoiding directional phase bias for a centred kernel.
-3. **Partition of unity:** $\sum_k\varphi(x-k)=1$, preserving constant signals.
-4. **Linear reproduction:** $\sum_k k\varphi(x-k)=x$, reproducing a linear ramp exactly.
-5. **Compact support:** the kernel is zero outside a finite interval, limiting the number of contributing samples.
-6. **Smoothness:** continuity of the kernel and its derivatives affects the smoothness of the reconstructed image.
+1. **Интерполяция:** $\varphi(0)=1$, а $\varphi(n)=0$ для каждого ненулевого целого $n$.
+2. **Симметрия:** $\varphi(x)=\varphi(-x)$; это исключает направленное фазовое смещение центрированного ядра.
+3. **Разбиение единицы:** $\sum_k\varphi(x-k)=1$, что сохраняет постоянные сигналы.
+4. **Воспроизведение линейной функции:** $\sum_k k\varphi(x-k)=x$, что обеспечивает точное воспроизведение линейной рампы.
+5. **Компактная поддержка:** ядро равно нулю вне конечного интервала, поэтому число участвующих отсчётов ограничено.
+6. **Гладкость:** непрерывность ядра и его производных влияет на гладкость восстановленного изображения.
 
-More generally, polynomial reproduction conditions can be written as
+Более общие условия воспроизведения полиномов можно записать так:
 
 $$
  \sum_{k\in\mathbb Z} k^r\varphi(x-k)=x^r,
  \qquad r=0,\ldots,L-1.
 $$
 
-These moment/reproduction conditions are closely connected to approximation order: how quickly an approximation error decreases as the sampling grid is refined. The exact relationship depends on the function space and assumptions, but Taylor expansion and Fourier-domain analysis are standard ways to derive error orders.
+Эти условия на моменты/воспроизведение тесно связаны с порядком аппроксимации — скоростью уменьшения ошибки аппроксимации при уточнении сетки отсчётов. Точная связь зависит от функционального пространства и предположений, однако для вывода порядков ошибки обычно используют разложение Тейлора и анализ в частотной области.
 
-A kernel need not have only positive weights. Negative lobes can retain high-frequency contrast and make an image look sharper, but can overshoot near a sharp transition. Positive weights are more likely to stay within the local input range, but often produce more blur. This is one reason sharpness and ringing must be evaluated together.
+Ядро не обязательно должно иметь только положительные веса. Отрицательные лепестки могут сохранять высокочастотный контраст и делать изображение визуально резче, но возле резкого перехода они могут вызывать превышение значений. Положительные веса с большей вероятностью удерживают результат внутри локального диапазона входных данных, но часто дают большее размытие. Поэтому резкость и звон необходимо оценивать совместно.
 
-### 3.3 A standard resampling equation
+### 3.3 Стандартное уравнение передискретизации
 
-For an output pixel at destination coordinate $(p,q)$, first map it back to the corresponding source coordinate $(x_s,y_s)$. A separable resampler can then be written as
+Для выходного пикселя с целевой координатой $(p,q)$ сначала выполняется обратное отображение в соответствующую исходную координату $(x_s,y_s)$. Затем сепарабельный ресэмплер можно записать как
 
 $$
  I_{out}[p,q]=\sum_i\sum_j I_{in}[i,j]
  K_x(x_s-i)K_y(y_s-j),
 $$
 
-with appropriate normalization and boundary extension. This equation is the core abstraction behind many resize routines. The algorithm is determined not only by the word used for the kernel, but also by the coordinate map, kernel parameters, filter dilation, edge policy, precision, and rounding.
+с соответствующей нормализацией и расширением границ. Это основная абстракция многих процедур изменения размера. Алгоритм определяется не только названием ядра, но и отображением координат, параметрами ядра, растяжением фильтра, политикой обработки краёв, точностью и округлением.
 
-## 4. Classical interpolation methods
+## 4. Классические методы интерполяции
 
-### 4.1 Nearest-neighbour interpolation
+### 4.1 Интерполяция ближайшим соседом
 
-Choose the source sample whose centre is closest to the query coordinate:
+Выбирается исходный отсчёт, центр которого ближе всего к запрашиваемой координате:
 
 $$
  \widehat f(x)=f_s[\mathrm{round}(x)].
 $$
 
-A centred one-dimensional box basis can be described (up to the tie convention at exactly half-integer positions) by
+Центрированный одномерный базис в виде прямоугольника можно описать (с точностью до соглашения при равенстве расстояний в полуцелых точках) так:
 
 ```math
  \varphi_{NN}(x)=
  \begin{cases}
  1,&\lvert x \rvert<\tfrac12,\\
- 0,&\text{otherwise}.
+ 0,&\text{иначе}.
  \end{cases}
 ```
 
-The reconstructed function is piecewise constant. It is exceptionally cheap and does not invent intermediate class values, which is why nearest-neighbour is appropriate for segmentation masks, label maps, categorical rasters, and pixel art. It gives blocky enlargements and jagged transformed edges for photographs, and point-sampling during reduction can alias badly.
+Восстановленная функция кусочно-постоянна. Метод исключительно дешёвый и не создаёт промежуточных значений классов, поэтому ближайший сосед подходит для масок сегментации, карт меток, категориальных растров и пиксельной графики. При увеличении фотографий он создаёт блочную структуру, а при геометрическом преобразовании — ступенчатые границы; точечная дискретизация при уменьшении может вызывать сильное наложение спектров.
 
-### 4.2 Linear and bilinear interpolation
+### 4.2 Линейная и билинейная интерполяция
 
-For a one-dimensional query $x$, let $i=\lfloor x\rfloor$ and $t=x-i$. Linear interpolation is
+Для одномерной запрашиваемой координаты $x$ пусть $i=\lfloor x\rfloor$ и $t=x-i$. Линейная интерполяция задаётся формулой
 
 $$
- \widehat f(x)=(1-t)f_s[i]+t f_s[i+1].
+ \widehat f(x)=(1-t)f_s[i]+tf_s[i+1].
 $$
 
-Its triangular reconstruction kernel is
+Её треугольное реконструкционное ядро равно
 
 $$
  \varphi_{lin}(x)=\max(1-\lvert x \rvert,0).
 $$
 
-For a two-dimensional point, set $i=\lfloor x\rfloor$, $j=\lfloor y\rfloor$, $t_x=x-i$, and $t_y=y-j$. The bilinear value is
+Для двумерной точки положим $i=\lfloor x\rfloor$, $j=\lfloor y\rfloor$, $t_x=x-i$ и $t_y=y-j$. Билинейное значение равно
 
 $$
 \begin{aligned}
@@ -213,15 +213,15 @@ $$
 \end{aligned}
 $$
 
-This is a weighted average of the four corners of the containing cell. It is a linear operator with respect to the pixel values, although its polynomial expression contains the coordinate product $xy$; “bilinear” does not mean a single plane in the two coordinates. The reconstructed surface is continuous, but its first derivatives can jump at grid lines. Bilinear is inexpensive and stable, but its triangular kernel attenuates high spatial frequencies, so enlarged images can look soft.
+Это взвешенное среднее четырёх углов ячейки, содержащей данную точку. Оператор линеен относительно значений пикселей, хотя его полиномиальное выражение содержит произведение координат $xy$; слово «билинейная» не означает, что график является одной плоскостью в двух координатах. Восстановленная поверхность непрерывна, но её первые производные могут иметь скачки на линиях сетки. Билинейный метод недорог и устойчив, однако треугольное ядро подавляет высокие пространственные частоты, поэтому увеличенные изображения могут выглядеть мягкими.
 
-### 4.3 Bicubic interpolation is a family, not a single formula
+### 4.3 Бикубическая интерполяция — это семейство методов, а не одна формула
 
-“Bicubic” usually means a separable two-dimensional interpolation using a cubic kernel along each axis. A compactly supported cubic kernel with support radius two uses up to four samples per axis, or a 4×4 neighbourhood in two dimensions. But many different cubic kernels satisfy reasonable interpolation and smoothness constraints. The label *bicubic* does not uniquely identify a coefficient set or frequency response.
+Под «бикубической» интерполяцией обычно понимают сепарабельную двумерную интерполяцию с кубическим ядром вдоль каждой оси. Компактное кубическое ядро с радиусом поддержки два использует до четырёх отсчётов по каждой оси, то есть окрестность 4×4 в двух измерениях. Однако существует множество различных кубических ядер, удовлетворяющих разумным ограничениям на интерполяцию и гладкость. Название *bicubic* однозначно не задаёт набор коэффициентов или частотную характеристику.
 
-#### Keys cubic convolution
+#### Кубическая свёртка Keys
 
-Keys derived a piecewise cubic convolution kernel. In normalized coordinates $r=\lvert x \rvert$, its one-dimensional form is
+Keys вывел кусочное кубическое ядро свёртки. В нормированных координатах $r=\lvert x \rvert$ его одномерная форма имеет вид
 
 ```math
  K_a(x)=
@@ -232,19 +232,19 @@ Keys derived a piecewise cubic convolution kernel. In normalized coordinates $r=
  \end{cases}
 ```
 
-Keys obtains this family by imposing symmetry, compact support, interpolation at integer nodes, continuity constraints, and accuracy conditions. A Taylor-series argument selects $a=-\tfrac12$ for third-order convergence in the paper's construction; this parameter is often associated with Catmull–Rom cubic convolution. Other values are used by real libraries, producing visibly and numerically different results.
+Keys получил это семейство, накладывая условия симметрии, компактной поддержки, интерполяции в целочисленных узлах, непрерывности и точности аппроксимации. Аргумент на основе ряда Тейлора выбирает $a=-\tfrac12$ для сходимости третьего порядка в построении, описанном в статье; этот параметр часто связывают с кубической свёрткой Catmull–Rom. В реальных библиотеках используются и другие значения, приводящие к заметно отличающимся результатам — как визуально, так и численно.
 
-The two-dimensional separable form is
+Сепарабельная двумерная форма равна
 
 $$
  K_a^{(2D)}(x,y)=K_a(x)K_a(y).
 $$
 
-It can preserve more detail than bilinear interpolation, but negative portions of the kernel can create overshoot or undershoot near high-contrast edges (ringing/halos).
+Она может сохранять больше деталей, чем билинейная интерполяция, однако отрицательные участки ядра способны создавать превышение или занижение значений около высококонтрастных границ (звон/ореолы).
 
-#### Mitchell–Netravali cubic filters
+#### Кубические фильтры Mitchell--Netravali
 
-Mitchell and Netravali studied a two-parameter family of piecewise cubic reconstruction filters, commonly parameterized by $B$ and $C$. One common expression is
+Mitchell и Netravali исследовали двухпараметрическое семейство кусочных кубических реконструкционных фильтров, обычно задаваемых параметрами $B$ и $C$. Один из распространённых вариантов записи:
 
 ```math
 K_{B,C}(x)=\frac{1}{6}
@@ -255,19 +255,19 @@ K_{B,C}(x)=\frac{1}{6}
 \end{cases}
 ```
 
-Different parameter choices trade blur, ringing, and alias rejection. The paper's well-known compromise is $(B,C)=(\tfrac13,\tfrac13)$; other choices include cubic B-spline-like smoothing and sharper Catmull–Rom-like interpolation. The paper emphasizes that filters should be judged not only by their fit at sample points but also by their frequency response and visible artifacts.
+Разные значения параметров задают компромисс между размытием, звоном и подавлением наложения спектров. Известный компромиссный вариант из статьи — $(B,C)=(\tfrac13,\tfrac13)$; к другим вариантам относятся сглаживание, похожее на кубический B-сплайн, и более резкая интерполяция, напоминающая Catmull–Rom. Авторы подчёркивают, что фильтры следует оценивать не только по тому, насколько хорошо они проходят через точки отсчёта, но и по частотной характеристике и видимым артефактам.
 
-### 4.4 Spline interpolation and the B-spline distinction
+### 4.4 Сплайн-интерполяция и отличие B-сплайна
 
-A spline is a piecewise polynomial whose segments join with prescribed smoothness. Cubic splines are popular partly because their first and second derivatives can be made continuous, and because natural cubic splines have a variational characterization related to minimizing bending energy, commonly expressed in one dimension through an integral of the squared second derivative.
+Сплайн — это кусочный полином, сегменты которого соединяются с заданными условиями гладкости. Кубические сплайны популярны отчасти потому, что их первые и вторые производные могут быть непрерывными, а естественные кубические сплайны имеют вариационную характеристику, связанную с минимизацией энергии изгиба; в одном измерении она обычно выражается интегралом квадрата второй производной.
 
-A centred B-spline of degree $n$ is the $(n+1)$-fold convolution of a unit-width box function:
+Центрированный B-сплайн степени $n$ — это $(n+1)$-кратная свёртка прямоугольной функции единичной ширины:
 
 $$
- \beta^n=\underbrace{\beta^0*\beta^0*\cdots*\beta^0}_{n+1\text{ factors}}.
+ \beta^n=\underbrace{\beta^0*\beta^0*\cdots*\beta^0}_{n+1\text{ множителей}}.
 $$
 
-The cubic B-spline basis function is
+Базисная функция кубического B-сплайна:
 
 ```math
 \beta^3(x)=
@@ -278,13 +278,13 @@ The cubic B-spline basis function is
 \end{cases}
 ```
 
-A crucial distinction: the cubic B-spline basis is smooth and compactly supported, but it is **not interpolating**. If raw pixel samples are used directly as B-spline coefficients, the reconstructed spline generally does not pass exactly through the pixels; it is a smoothed approximation. To obtain an exact interpolating spline, one must first calculate coefficients by inverting the discrete sampling relation. In practice this is implemented by a digital prefilter, often using efficient recursive causal and anti-causal filters rather than explicitly inverting a large matrix.
+Ключевое различие: базис кубического B-сплайна гладкий и имеет компактную поддержку, но **не является интерполирующим**. Если использовать исходные пиксельные отсчёты напрямую в качестве коэффициентов B-сплайна, восстановленный сплайн в общем случае не будет точно проходить через пиксели; он даст сглаженное приближение. Чтобы получить точный интерполирующий сплайн, необходимо сначала вычислить коэффициенты, обратив дискретное соотношение дискретизации. На практике это выполняется цифровым предварительным фильтром, часто с помощью эффективных рекурсивных каузальных и антикаузальных фильтров, а не явным обращением большой матрицы.
 
-This explains why “cubic B-spline interpolation” is not the same method as Keys bicubic convolution. The former uses a non-interpolating basis plus coefficient prefilter; the latter uses an interpolating cubic convolution kernel whose coefficients can be the samples themselves. SciPy's `ndimage.zoom` uses spline interpolation of selectable order and exposes a `prefilter` option; its default order is three. It should not be treated as an implementation of Keys' `a=-0.5` bicubic kernel.
+Именно поэтому «интерполяция кубическим B-сплайном» — не то же самое, что бикубическая свёртка Keys. В первом случае используется неинтерполирующий базис и предварительная фильтрация коэффициентов; во втором — интерполирующее кубическое ядро свёртки, коэффициентами которого могут быть сами отсчёты. Функция SciPy `ndimage.zoom` использует сплайн-интерполяцию выбираемого порядка и предоставляет параметр `prefilter`; её порядок по умолчанию равен трём. Её не следует считать реализацией бикубического ядра Keys с параметром `a=-0.5`.
 
-### 4.5 Lanczos interpolation
+### 4.5 Интерполяция Lanczos
 
-The Lanczos kernel is a windowed sinc. With radius $a>0$,
+Ядро Lanczos — это оконная функция sinc. При радиусе $a>0$:
 
 ```math
  K_{L,a}(x)=
@@ -294,212 +294,211 @@ The Lanczos kernel is a windowed sinc. With radius $a>0$,
  \end{cases}
 ```
 
-Lanczos-3 uses $a=3$; in one dimension the kernel has finite radius three, and a separable two-dimensional version applies it along both axes. The window truncates the infinite sinc while retaining much of its frequency-selective behaviour. A wider support follows the ideal sinc more closely but requires more work. Oscillatory side lobes can cause ringing around high-contrast edges, especially when a sharp dark-to-light transition is present.
+В Lanczos-3 используется $a=3$; в одном измерении ядро имеет конечный радиус три, а сепарабельный двумерный вариант применяет его вдоль обеих осей. Оконная функция обрезает бесконечную sinc, сохраняя значительную часть её избирательных частотных свойств. Более широкая поддержка точнее приближает идеальную sinc, но требует больше вычислений. Колебательные боковые лепестки могут вызывать звон вокруг высококонтрастных границ, особенно при резком переходе от тёмного к светлому.
 
-Pillow describes Lanczos as a truncated sinc. ImageMagick's resampling guide explains the role of the sinc window and the trade-off between support size, frequency response, and ringing. Lanczos is often a strong general-purpose choice, not a universal optimum.
+Pillow описывает Lanczos как усечённую функцию sinc. В руководстве ImageMagick по передискретизации объясняется роль окна sinc и компромисс между размером поддержки, частотной характеристикой и звоном. Lanczos часто является сильным универсальным вариантом, но не оптимален во всех случаях.
 
-### 4.6 Area/box resampling
+### 4.6 Передискретизация по площади/методом box
 
-When shrinking an image, a destination pixel covers a region of the source image. An area method estimates the average value over that source footprint:
+При уменьшении изображения целевой пиксель покрывает некоторую область исходного изображения. Метод area оценивает среднее значение по этому исходному отпечатку:
 
 $$
  I_{out}[p,q]\approx\frac{1}{\lvert A_{pq} \rvert}
  \int_{A_{pq}} I(x,y)\,dx\,dy.
 $$
 
-Under a piecewise-constant source-pixel model, the integral can be evaluated by summing each source pixel value multiplied by the area of overlap between its square and the destination footprint. In a separable axis-aligned resize, overlap weights can be computed independently in x and y. This makes area resampling especially natural for reduction. It is not simply another name for bilinear or bicubic interpolation; it integrates a footprint rather than evaluating a local point estimate.
+При модели исходных пикселей как кусочно-постоянных областей интеграл можно вычислить суммированием значений каждого исходного пикселя, умноженных на площадь пересечения его квадрата с целевым отпечатком. При сепарабельном изменении размера с осями, параллельными координатным, веса перекрытия можно вычислять независимо по x и y. Поэтому передискретизация по площади особенно естественна при уменьшении. Это не просто другое название билинейной или бикубической интерполяции: метод интегрирует отпечаток, а не вычисляет локальную точечную оценку.
 
-## 5. Downsampling and anti-aliasing
+## 5. Уменьшение изображения и подавление наложения спектров
 
-### 5.1 Why reduction is a different problem
+### 5.1 Почему уменьшение — другая задача
 
-Suppose an image is reduced by a linear scale factor $s<1$. The output grid has a lower Nyquist limit. Frequencies that were representable in the source may lie above the output Nyquist limit. If they are sampled without filtering, they fold into lower frequencies and become aliasing. Therefore the correct conceptual sequence is
+Предположим, изображение уменьшается с линейным коэффициентом масштаба $s<1$. У выходной сетки более низкая частота Найквиста. Частоты, представимые в исходном изображении, могут оказаться выше частоты Найквиста выходной сетки. Если дискретизировать их без фильтрации, они отобразятся в более низкие частоты и вызовут наложение спектров. Поэтому правильная концептуальная последовательность такова:
 
 $$
- \text{low-pass filter}\;\longrightarrow\;\text{sample on the coarser grid}.
+ \text{низкочастотная фильтрация}\;\longrightarrow\;\text{дискретизация на более редкой сетке}.
 $$
 
-A useful mathematical model is
+Полезная математическая модель:
 
 $$
  I_{out}[m,n]=(I_{in}*h_s)(m/s,n/s),
 $$
 
-where $h_s$ removes frequencies that cannot be represented on the output grid. In one dimension, scaling a reconstruction kernel to the reduced sampling rate gives a broadened filter of the form
+где $h_s$ удаляет частоты, которые не могут быть представлены на выходной сетке. В одном измерении масштабирование реконструкционного ядра под пониженную частоту дискретизации даёт расширенный фильтр вида
 
 $$
  K_s(x)=sK(sx),\qquad 0<s<1,
 $$
 
-with corresponding normalization. Its support in source-pixel coordinates grows by $1/s$. For example, reducing by a factor of four should combine information from a substantially wider source neighbourhood than enlarging by four. In two dimensions with possibly different axis scales, use the corresponding axis-specific widened kernels.
+с соответствующей нормировкой. Его поддержка в координатах исходных пикселей увеличивается в $1/s$ раз. Например, при уменьшении в четыре раза следует объединять информацию из существенно более широкой окрестности исходного изображения, чем при увеличении в четыре раза. В двух измерениях при разных масштабах по осям следует использовать соответствующие расширенные ядра по каждой оси.
 
-A common implementation error is to use the same narrow 4×4 or 6×6 footprint for a severe reduction as for enlargement. That does not adequately suppress high-frequency content and produces aliasing. MIT's downsampling chapter explicitly derives low-pass filtering followed by decimation and describes windowed-sinc and binomial approximations.
+Распространённая ошибка реализации — использовать при сильном уменьшении ту же узкую область 4×4 или 6×6, что и при увеличении. Это недостаточно подавляет высокочастотное содержимое и приводит к наложению спектров. В главе MIT об уменьшении явно выводится низкочастотная фильтрация с последующей децимацией и описываются приближения с оконной sinc и биномиальными фильтрами.
 
-### 5.2 Windowed low-pass filters
+### 5.2 Оконные низкочастотные фильтры
 
-The ideal low-pass filter is a rectangular response in the Fourier domain and a sinc-shaped impulse response in the spatial domain. Since that impulse response is long/infinite, practical filters window and truncate it. Hamming, Hann, Blackman, Kaiser, and Lanczos-like windows change the compromise between transition width, stop-band attenuation, ripple, and ringing.
+Идеальный низкочастотный фильтр имеет прямоугольную частотную характеристику и импульсную характеристику в виде функции sinc в пространственной области. Поскольку эта импульсная характеристика длинная/бесконечная, практические фильтры применяют окно и обрезают её. Окна Hamming, Hann, Blackman, Kaiser и типа Lanczos задают разные компромиссы между шириной переходной области, подавлением в полосе задерживания, пульсациями и звоном.
 
-A finite binomial filter such as
+Конечный биномиальный фильтр, например
 
 $$
- [1,2,1]/4
+ [1,2,1]/4,
 $$
 
-is inexpensive and gives useful smoothing, but it is not an ideal brick-wall filter. A stronger binomial kernel such as $[1,4,6,4,1]/16$ attenuates more high frequency detail and may over-smooth. The right anti-alias strength depends on the reduction factor and the content.
+дешёв и обеспечивает полезное сглаживание, но не является идеальным фильтром с прямоугольной характеристикой. Более сильное биномиальное ядро $[1,4,6,4,1]/16$ подавляет больше высокочастотных деталей и может чрезмерно сглаживать изображение. Необходимая сила подавления наложения спектров зависит от коэффициента уменьшения и содержимого изображения.
 
-### 5.3 Upsampling is not the inverse of downsampling
+### 5.3 Увеличение не является обратной операцией к уменьшению
 
-Downsampling discards information. Upsampling increases the number of sample locations but cannot uniquely reconstruct the discarded high-frequency content. In multirate signal processing, integer upsampling can be represented as **zero insertion** (expansion) followed by an interpolation low-pass filter. Downsampling can be represented as an anti-aliasing low-pass filter followed by **decimation** (keeping every kth sample). These are different operators; one is not a lossless inverse of the other.
+Уменьшение уничтожает информацию. Увеличение увеличивает количество точек отсчёта, но не может однозначно восстановить утраченное высокочастотное содержимое. В многоскоростной обработке сигналов увеличение с целым коэффициентом можно представить как **вставку нулей** (расширение) с последующим интерполяционным низкочастотным фильтром. Уменьшение можно представить как низкочастотную фильтрацию для подавления наложения спектров с последующей **децимацией** (сохранением каждого k-го отсчёта). Это разные операторы; один не является без потерь обратным к другому.
 
-## 6. Geometric transformations and spatially varying filters
+## 6. Геометрические преобразования и пространственно изменяющиеся фильтры
 
-Resizing is only a special case of image resampling. Rotation, perspective projection, affine transforms, lens correction, texture mapping, and image warping map each output coordinate to a location in the source image.
+Изменение размера — лишь частный случай передискретизации изображения. Поворот, перспективное проецирование, аффинные преобразования, коррекция объектива, текстурное отображение и деформация изображения сопоставляют каждой выходной координате положение в исходном изображении.
 
-A robust implementation generally uses **inverse mapping**: loop over destination pixels, map each destination coordinate back into the source, then interpolate there. Forward mapping can leave holes because source pixels may not land exactly on destination pixel centres. OpenCV's geometric-transform documentation describes this destination-to-source mapping approach.
+Надёжная реализация обычно использует **обратное отображение**: перебирает выходные пиксели, переводит каждую целевую координату обратно в исходное изображение и выполняет там интерполяцию. При прямом отображении могут оставаться пустоты, поскольку исходные пиксели не обязательно попадают точно в центры целевых пикселей. В документации OpenCV по геометрическим преобразованиям описан такой подход с отображением из целевого пространства в исходное.
 
-For a general transform $\mathbf x_s=\Phi(\mathbf x_d)$, the local Jacobian
+Для общего преобразования $\mathbf x_s=\Phi(\mathbf x_d)$ локальная матрица Якоби
 
 $$
  J=\frac{\partial\Phi}{\partial\mathbf x_d}
 $$
 
-describes how a small destination pixel footprint maps into the source. Under non-uniform scale or shear, that footprint is generally an ellipse, not a circle or axis-aligned square. A single fixed isotropic kernel can therefore be inadequate. Elliptical weighted average (EWA) resampling uses a spatially varying elliptical footprint; Heckbert's Berkeley technical report is a foundational treatment of filtering for arbitrary texture mappings and image warps. MIP mapping and image pyramids are practical multiscale approaches for selecting appropriately prefiltered source levels when a texture is minified.
+описывает, как небольшой отпечаток целевого пикселя преобразуется в исходном изображении. При неоднородном масштабе или сдвиге этот отпечаток обычно является эллипсом, а не окружностью или квадратом, параллельным осям. Поэтому одного фиксированного изотропного ядра может быть недостаточно. Передискретизация EWA (elliptical weighted average, эллиптическое взвешенное усреднение) использует пространственно изменяющийся эллиптический отпечаток; технический отчёт Хекберта из Беркли — фундаментальная работа по фильтрации произвольных текстурных отображений и деформаций изображений. MIP-карты и пирамиды изображений — практические многомасштабные подходы к выбору подходящих предварительно отфильтрованных уровней исходного изображения при уменьшении текстуры.
 
-## 7. Practical implementation choices that change the answer
+## 7. Практические решения реализации, влияющие на результат
 
-Two functions both called “bicubic” or “Lanczos” may return different pixels. A fair comparison must record the whole resampling definition.
+Две функции, обе называемые «bicubic» или «Lanczos», могут возвращать разные пиксели. Для справедливого сравнения необходимо зафиксировать полное определение передискретизации.
 
-### 7.1 Coordinate conventions and pixel centres
+### 7.1 Соглашения о координатах и центрах пикселей
 
-Let the source length be $S$ and destination length be $D$. One common half-pixel mapping is
+Пусть длина исходного изображения равна $S$, а целевого — $D$. Одно распространённое отображение с полуцелым смещением:
 
 $$
  x_s(j)=\left(j+\frac12\right)\frac{S}{D}-\frac12.
 $$
 
-Another convention aligns the first and last pixel centres:
+Другое соглашение совмещает центры первого и последнего пикселей:
 
 $$
  x_s(j)=j\frac{S-1}{D-1},
 $$
 
-when the dimensions make this expression meaningful. These conventions differ, particularly for small dimensions and non-integer scale factors. The resampling result can shift or stretch by fractions of a pixel. SciPy exposes a related distinction through `grid_mode`: it can scale centre-to-centre distances or the full pixel extent. Record the convention explicitly.
+если размеры позволяют использовать это выражение. Эти соглашения различаются, особенно для малых размеров и нецелых коэффициентов масштабирования. Результат передискретизации может смещаться или растягиваться на доли пикселя. SciPy предоставляет связанное различие через параметр `grid_mode`: можно масштабировать расстояния между центрами или полную протяжённость пикселей. Явно фиксируйте выбранное соглашение.
 
-### 7.2 Boundary extension
+### 7.2 Расширение границ
 
-A kernel near an image border requests samples outside the finite array. The algorithm must decide how the image is extended. Common policies are:
+Ядро возле границы изображения запрашивает отсчёты за пределами конечного массива. Алгоритм должен определить, как продолжить изображение за краем. Распространённые варианты:
 
-- **Clamp/nearest:** repeat the first or last sample.
-- **Half-sample symmetric reflection:** repeat the edge sample at the reflection boundary.
-- **Whole-sample symmetric reflection:** reflect about the centre of the edge sample without repeating it.
-- **Wrap:** use periodic extension.
-- **Constant:** extend with a specified fill value.
+- **Clamp/nearest:** повторять ближайший граничный пиксель.
+- **Constant:** использовать постоянное значение (часто чёрный цвет).
+- **Wrap:** считать изображение периодическим.
+- **Reflect/mirror:** зеркально отражать изображение; важно проверить, повторяется ли сам крайний пиксель.
 
-The words `reflect` and `mirror` are not used consistently across libraries. SciPy calls half-sample symmetry `reflect` and whole-sample symmetry `mirror`; OpenCV's `BORDER_REFLECT_101` follows whole-sample symmetry. This project's public option `boundary="reflect"` means whole-sample symmetric reflection, where index `-1` maps to source index `1`. It therefore corresponds to SciPy `mirror` and OpenCV `BORDER_REFLECT_101`, not SciPy `reflect`. Always compare the explicit index mapping, not just the mode name.
+Названия режимов в разных библиотеках не всегда совпадают по смыслу. Например, SciPy `reflect` использует симметрию относительно половины отсчёта (крайний пиксель повторяется), а SciPy `mirror` — относительно целого отсчёта. В OpenCV `BORDER_REFLECT_101` используется симметрия относительно целого отсчёта. Публичный режим `boundary="reflect"` этого проекта означает симметричное отражение относительно целого отсчёта, при котором индекс -1 отображается в исходный индекс 1. Следовательно, он соответствует SciPy `mirror` и OpenCV `BORDER_REFLECT_101`, а не SciPy `reflect`. Всегда сравнивайте явное отображение индексов, а не только название режима.
 
-### 7.3 Kernel support, dilation, and normalization
+### 7.3 Поддержка ядра, растяжение и нормализация
 
-A kernel's support determines which source pixels contribute. For a downscale, that support should grow in source coordinates. Weights are commonly normalized so that
+Область поддержки ядра определяет, какие исходные пиксели вносят вклад. При уменьшении эта область должна расширяться в координатах исходного изображения. Веса обычно нормируются так, чтобы
 
 $$
  \sum_i w_i=1,
 $$
 
-which preserves a constant image (partition of unity). At borders, some implementations truncate the kernel and renormalize; others include padded samples. This choice changes edge pixels.
+что сохраняет постоянное изображение (разбиение единицы). На границах некоторые реализации обрезают ядро и повторно нормируют веса; другие включают дополненные отсчёты. Это решение изменяет крайние пиксели результата.
 
-### 7.4 Numeric precision, clipping, and quantization
+### 7.4 Численная точность, ограничение диапазона и квантование
 
-Computing every weighted sum in 8-bit integer arithmetic is unsafe because intermediate rounding can accumulate error and negative-lobe filters may temporarily produce values below zero or above the nominal maximum. A sound implementation normally computes in floating point, applies the full filter, then clips and rounds once when converting back to an integer image. Record dtype, intermediate precision, rounding rule, and clipping policy.
+Вычислять каждую взвешенную сумму в 8-битной целочисленной арифметике небезопасно: промежуточное округление может накапливать ошибку, а фильтры с отрицательными лепестками временно могут давать значения ниже нуля или выше номинального максимума. Надёжная реализация обычно выполняет вычисления с плавающей точкой, применяет фильтр целиком, а затем один раз ограничивает диапазон и округляет значения при преобразовании обратно в целочисленное изображение. Фиксируйте тип данных, промежуточную точность, правило округления и политику ограничения диапазона.
 
-### 7.5 Colour space and gamma
+### 7.5 Цветовое пространство и гамма
 
-sRGB values are gamma-encoded, not proportional to physical light. The ICC registry gives the piecewise sRGB transfer function. For physically meaningful averaging, filtering should ideally be done after decoding sRGB to linear-light RGB, followed by re-encoding to sRGB. Filtering encoded values directly can produce different brightness around edges and gradients. To isolate interpolation mathematics, a thesis should either use linear-light data or clearly declare that it compares the libraries' standard encoded-channel behaviour.
+Значения sRGB закодированы с гамма-коррекцией и не пропорциональны физическому свету. Реестр ICC содержит кусочную передаточную функцию sRGB. Для физически корректного усреднения фильтрацию в идеале следует выполнять после декодирования sRGB в RGB с линейной яркостью, а затем снова кодировать результат в sRGB. Прямая фильтрация закодированных значений может давать другую яркость на границах и градиентах. Чтобы изолировать математику интерполяции, в дипломной работе следует либо использовать данные с линейной яркостью, либо чётко указывать, что сравнивается стандартное поведение библиотек при обработке закодированных каналов.
 
-For images with transparency, filtering non-premultiplied RGB can create coloured fringes around transparent pixels. A robust pipeline generally premultiplies colour by alpha, filters premultiplied channels and alpha consistently, then un-premultiplies where alpha is nonzero.
+Для изображений с прозрачностью фильтрация RGB без предварительного умножения на альфа-канал может создавать цветные ореолы вокруг прозрачных пикселей. Надёжный процесс обычно предварительно умножает цвет на альфа-канал, согласованно фильтрует предварительно умноженные каналы и сам альфа-канал, а затем выполняет обратное деление там, где альфа-канал ненулевой.
 
-### 7.6 Library names are not complete mathematical specifications
+### 7.6 Названия библиотечных методов не являются полными математическими спецификациями
 
-The source code makes the ambiguity concrete. Pillow's current `Resample.c` defines its bicubic cubic-convolution parameter as `a = -0.5` and its Lanczos filter with support radius 3. OpenCV's current 4.x `resize.cpp` defines its cubic parameter `A = -0.75`; its `INTER_LANCZOS4` implementation builds eight coefficients per axis, corresponding to an 8×8 source neighbourhood in two dimensions. OpenCV's API documentation likewise describes `INTER_CUBIC` as a 4×4 neighbourhood and `INTER_LANCZOS4` as an 8×8 neighbourhood.
+Исходный код наглядно показывает неоднозначность. В текущем файле Pillow `Resample.c` параметр кубической свёртки для bicubic определён как `a = -0.5`, а фильтр Lanczos имеет радиус поддержки 3. В текущем файле OpenCV 4.x `resize.cpp` кубический параметр определён как `A = -0.75`; реализация `INTER_LANCZOS4` строит восемь коэффициентов по каждой оси, что соответствует исходной окрестности 8×8 в двух измерениях. Документация API OpenCV также описывает `INTER_CUBIC` как окрестность 4×4, а `INTER_LANCZOS4` — как окрестность 8×8.
 
-These are related filter families, but they are not numerically identical. The cubic parameter changes the shape and frequency response of the kernel. The Lanczos radius changes the window/support and the number of contributing samples. Coordinate mapping, boundary policy, coefficient quantization, and output rounding can introduce further differences. Therefore a result from `PIL.Image.Resampling.BICUBIC` should not be expected to equal `cv2.INTER_CUBIC`, even when the input and output dimensions match.
+Это родственные семейства фильтров, но численно они не идентичны. Кубический параметр изменяет форму и частотную характеристику ядра. Радиус Lanczos изменяет окно/область поддержки и количество участвующих отсчётов. Отображение координат, политика границ, квантование коэффициентов и округление результата могут дополнительно повлиять на различия. Поэтому не следует ожидать, что результат `PIL.Image.Resampling.BICUBIC` совпадёт с `cv2.INTER_CUBIC`, даже если размеры входного и выходного изображений одинаковы.
 
-For a controlled mathematical comparison, implement one explicitly stated formula in the independent code and compare it against a reference implementation only after verifying that the reference uses the same parameter. For a practical library comparison, do not force different presets into a false claim of algorithmic equivalence: compare the end-to-end results and document the exact library version.
+Для контролируемого математического сравнения реализуйте одну явно заданную формулу в независимом коде и сравнивайте её с эталонной реализацией только после проверки, что в ней используется тот же параметр. При практическом сравнении библиотек не следует искусственно объявлять разные предустановки алгоритмически эквивалентными: сравнивайте полный результат обработки и документируйте точную версию библиотеки.
 
-## 8. Adaptive and edge-directed interpolation
+## 8. Адаптивная и ориентированная на границы интерполяция
 
-Classical fixed kernels use the same spatially invariant weights everywhere. Natural images, however, contain edges and textures whose local structure is directional. A fixed isotropic kernel may average across an edge and blur it.
+В классических фильтрах с фиксированными ядрами везде используются одинаковые пространственно-инвариантные веса. Однако естественные изображения содержат границы и текстуры с локальной направленной структурой. Фиксированное изотропное ядро может усреднять значения по разные стороны границы и размывать её.
 
-Edge-directed methods estimate local orientation or local statistics and adapt the weights. One influential example is **New Edge-Directed Interpolation (NEDI)** by Li and Orchard (2001). It estimates local covariance from the low-resolution image and uses a geometric relationship between low- and high-resolution covariance to adapt interpolation coefficients. The intuition is that image intensity tends to vary more slowly along an edge than across it. The method can better follow oblique edges than an isotropic linear interpolator, at greater computational and modelling complexity.
+Методы, ориентированные на границы, оценивают локальную ориентацию или статистику и адаптируют веса. Один из влиятельных примеров — **New Edge-Directed Interpolation (NEDI)**, предложенный Li и Orchard (2001). Метод оценивает локальную ковариацию по изображению низкого разрешения и использует геометрическую связь между ковариациями низкого и высокого разрешения для адаптации коэффициентов интерполяции. Идея состоит в том, что интенсивность изображения обычно меняется вдоль границы медленнее, чем поперёк неё. Благодаря этому метод может лучше следовать наклонным границам, чем изотропный линейный интерполятор, но требует больших вычислительных затрат и более сложной модели.
 
-A generic local linear predictor can be written as
+Общий локальный линейный предиктор можно записать так:
 
 $$
  \widehat y=\mathbf w^T\mathbf x,
 $$
 
-where $\mathbf x$ contains known neighbourhood values. In a minimum-mean-square-error/Wiener setting, coefficients are related to covariance matrices, for example
+где $\mathbf x$ содержит известные значения окрестности. В постановке минимальной среднеквадратичной ошибки/фильтра Винера коэффициенты связаны с матрицами ковариации, например:
 
 $$
  \mathbf w=\mathbf R_{xx}^{-1}\mathbf r_{xy},
 $$
 
-when the inverse exists (or a regularized/pseudoinverse version is used). This connects adaptive interpolation to statistical estimation and linear prediction. NEDI's specific covariance estimation and geometric-duality construction should be read in the original paper rather than reduced to this generic formula.
+если обратная матрица существует (или используется регуляризованный вариант/псевдообратная матрица). Это связывает адаптивную интерполяцию со статистическим оцениванием и линейным предсказанием. Конкретную оценку ковариации и построение геометрической двойственности в NEDI следует изучать по оригинальной статье, а не сводить к этой общей формуле.
 
-Other adaptive families include directional filters, edge-guided polynomial fitting, gradient-based interpolation, iterative reconstruction, and demosaicing-specific algorithms. Demosaicing is related but distinct: the missing values are colour channels sampled on a colour-filter-array pattern, and cross-channel correlations are used in addition to spatial information.
+К другим адаптивным семействам относятся направленные фильтры, полиномиальная аппроксимация с учётом границ, интерполяция на основе градиентов, итерационная реконструкция и специальные алгоритмы демозаики. Демозаика связана с этой темой, но отличается от неё: пропущенные значения являются цветовыми каналами, отсчёты которых получены по шаблону цветового фильтра, а помимо пространственной информации используются межканальные корреляции.
 
-## 9. Mathematical disciplines connected to image interpolation
+## 9. Математические дисциплины, связанные с интерполяцией изображений
 
-| Field | Connection to image interpolation |
+| Область | Связь с интерполяцией изображений |
 |---|---|
-| **Signal processing** | Sampling, reconstruction, convolution, multirate systems, low-pass filtering, polyphase implementations, and linear shift-invariant systems. |
-| **Fourier/harmonic analysis** | Frequency responses, Nyquist limits, spectral replicas, aliasing, sinc reconstruction, stop-band attenuation, and ringing. |
-| **Approximation theory** | Basis functions, cardinal interpolation, polynomial reproduction, approximation order, convergence, and approximation error. |
-| **Spline theory** | Piecewise polynomials, B-spline bases, smoothness constraints, cardinal splines, and spline prefilters. |
-| **Numerical analysis** | Taylor expansions, truncation error, stability, conditioning, floating-point precision, and boundary-value problems. |
-| **Linear algebra** | Solving for spline coefficients; covariance estimation; matrix formulations of filtering, expansion, and decimation. |
-| **Optimization and variational methods** | Minimum-curvature splines, least-squares reconstruction, regularization, and energy minimization. |
-| **Probability and statistics** | MMSE estimation, covariance-based adaptive kernels, noise models, and uncertainty in missing samples. |
-| **Computer graphics and geometry** | Inverse coordinate maps, affine/projective transforms, texture mapping, local Jacobians, EWA filtering, and MIP maps. |
-| **Colour science** | Linear-light colour, transfer functions, RGB encoding, premultiplied alpha, and perceptual colour differences. |
-| **Human vision and psychophysics** | Perceived sharpness, contrast sensitivity, edge visibility, ringing tolerance, and perceptual image-quality metrics. |
-| **Machine learning** | Learned super-resolution and image priors. These methods can hallucinate plausible detail and should be distinguished from classical interpolation. |
+| **Обработка сигналов** | Дискретизация, реконструкция, свёртка, многоскоростные системы, низкочастотная фильтрация, полифазные реализации и линейные стационарные системы. |
+| **Анализ Фурье/гармонический анализ** | Частотные характеристики, пределы Найквиста, спектральные копии, наложение спектров, реконструкция sinc, подавление в полосе задерживания и звон. |
+| **Теория приближений** | Базисные функции, кардинальная интерполяция, воспроизведение полиномов, порядок аппроксимации, сходимость и ошибка приближения. |
+| **Теория сплайнов** | Кусочные полиномы, базисы B-сплайнов, условия гладкости, кардинальные сплайны и предварительные сплайн-фильтры. |
+| **Численный анализ** | Разложения Тейлора, ошибка усечения, устойчивость, обусловленность, точность чисел с плавающей точкой и краевые задачи. |
+| **Линейная алгебра** | Решение систем для коэффициентов сплайнов; оценка ковариации; матричные представления фильтрации, расширения и децимации. |
+| **Оптимизация и вариационные методы** | Сплайны минимальной кривизны, реконструкция методом наименьших квадратов, регуляризация и минимизация энергии. |
+| **Теория вероятностей и статистика** | Оценивание MMSE, адаптивные ядра на основе ковариации, модели шума и неопределённость пропущенных отсчётов. |
+| **Компьютерная графика и геометрия** | Обратные отображения координат, аффинные/проективные преобразования, текстурное отображение, локальные матрицы Якоби, фильтрация EWA и MIP-карты. |
+| **Наука о цвете** | Цвет с линейной яркостью, передаточные функции, кодирование RGB, предварительно умноженный альфа-канал и перцептивные цветовые различия. |
+| **Зрение человека и психофизика** | Воспринимаемая резкость, контрастная чувствительность, видимость границ, допустимость звона и перцептивные метрики качества изображения. |
+| **Машинное обучение** | Обученное сверхразрешение и априорные модели изображений. Такие методы могут создавать правдоподобные вымышленные детали, поэтому их следует отличать от классической интерполяции. |
 
-## 10. How to evaluate interpolation methods scientifically
+## 10. Как научно оценивать методы интерполяции
 
-### 10.1 Controlled degradation and ground truth
+### 10.1 Контролируемое ухудшение и эталонная истина
 
-A defensible upscaling experiment begins with a high-resolution reference. Generate a lower-resolution input through a documented degradation operator (ideally a low-pass blur followed by sampling), then reconstruct it to the reference dimensions. Compare the reconstruction with the original high-resolution image. The degradation kernel matters: if every low-resolution test image is created with Lanczos, the Lanczos reconstruction has a built-in model-match advantage. Repeat with more than one degradation model and with a variety of image classes.
+Обоснованный эксперимент по увеличению начинается с эталона высокого разрешения. Создайте изображение низкого разрешения с помощью задокументированного оператора ухудшения (в идеале — низкочастотного размытия с последующей дискретизацией), а затем восстановите его до исходных размеров. Сравните результат реконструкции с исходным изображением высокого разрешения. Ядро ухудшения имеет значение: если все тестовые изображения низкого разрешения создаются с помощью Lanczos, реконструкция Lanczos получает встроенное преимущество соответствия модели. Повторите эксперимент с несколькими моделями ухудшения и разными классами изображений.
 
-Keep the following variables fixed within each comparison: source image, source and destination dimensions, scale factor, coordinate convention, colour handling, output dtype, boundary mode, and degradation process. If the purpose is to compare implementations of the same named mathematical filter, also fix its exact kernel formula and parameter values.
+В каждом сравнении фиксируйте следующие переменные: исходное изображение, размеры исходного и целевого изображений, коэффициент масштабирования, соглашение о координатах, обработку цвета, тип выходных данных, режим границ и процесс ухудшения. Если цель — сравнить реализации одного и того же математического фильтра с одинаковым названием, дополнительно зафиксируйте точную формулу ядра и значения параметров.
 
-Use two separate comparisons:
+Проводите два отдельных сравнения:
 
-1. **Implementation fidelity:** compare a hand-coded method with a reference implementation that uses the same mathematical kernel, coordinate map, boundary mode, and precision. This tests correctness and implementation differences.
-2. **Library preset comparison:** compare Pillow, OpenCV, SciPy, or other out-of-the-box presets. This compares complete software pipelines, not necessarily identical mathematical filters.
+1. **Соответствие реализации:** сравните написанный вручную метод с эталонной реализацией, использующей то же математическое ядро, отображение координат, режим границ и точность. Это проверяет корректность и различия реализаций.
+2. **Сравнение библиотечных предустановок:** сравните готовые методы Pillow, OpenCV, SciPy или других библиотек. Это сравнение полных программных процессов, а не обязательно идентичных математических фильтров.
 
-### 10.2 Objective metrics
+### 10.2 Объективные метрики
 
-Let the reference image be $I$, reconstruction be $\widehat I$, and there be $N$ scalar samples across all compared channels.
+Пусть эталонное изображение — $I$, реконструкция — $\widehat I$, а $N$ — количество скалярных отсчётов по всем сравниваемым каналам.
 
-**Mean squared error (MSE)**
+**Среднеквадратичная ошибка (MSE)**
 
 $$
  \mathrm{MSE}=\frac1N\sum_{n=1}^N(I_n-\widehat I_n)^2.
 $$
 
-Lower is better. MSE is mathematically simple but treats all sample errors independently and equally.
+Меньше — лучше. MSE математически проста, но рассматривает все ошибки отсчётов независимо и одинаково.
 
-**Peak signal-to-noise ratio (PSNR)**
+**Пиковое отношение сигнал/шум (PSNR)**
 
 $$
  \mathrm{PSNR}=10\log_{10}\left(\frac{L^2}{\mathrm{MSE}}\right)\;\mathrm{dB},
 $$
 
-where $L$ is the maximum possible sample value (255 for ordinary 8-bit samples, or 1 for normalized floating-point data). Higher is better; an exact match yields infinite PSNR. PSNR is a logarithmic restatement of MSE, not an independent perceptual model.
+где $L$ — максимально возможное значение отсчёта (255 для обычных 8-битных отсчётов или 1 для нормализованных данных с плавающей точкой). Чем выше значение, тем лучше; при точном совпадении PSNR бесконечен. PSNR — логарифмическая форма представления MSE, а не независимая перцептивная модель.
 
-**Structural Similarity (SSIM)**
+**Структурное сходство (SSIM)**
 
-SSIM compares local luminance, contrast, and structure. A commonly used combined form is
+SSIM сравнивает локальную яркость, контраст и структуру. Распространённая объединённая форма:
 
 $$
  \mathrm{SSIM}(x,y)=
@@ -507,90 +506,70 @@ $$
  {(\mu_x^2+\mu_y^2+C_1)(\sigma_x^2+\sigma_y^2+C_2)},
 $$
 
-where $\mu_x,\mu_y$ are local means, $\sigma_x^2,\sigma_y^2$ local variances, and $\sigma_{xy}$ local covariance. Constants stabilize the expression near zero denominators. The original SSIM paper develops this structural approach as a complement to error-visibility models. Values closer to one indicate greater structural similarity under the chosen implementation and settings.
+где $\mu_x,\mu_y$ — локальные средние, $\sigma_x^2,\sigma_y^2$ — локальные дисперсии, а $\sigma_{xy}$ — локальная ковариация. Константы стабилизируют выражение при знаменателях, близких к нулю. В оригинальной статье SSIM этот структурный подход разработан как дополнение к моделям видимости ошибок. Значения, более близкие к единице, указывают на большее структурное сходство при выбранной реализации и настройках.
 
-**LPIPS and other learned perceptual metrics** may be added as exploratory metrics, but they depend on a pretrained network and model version. They should not replace transparent pixel/structural metrics or human visual inspection in a classical interpolation thesis.
+**LPIPS и другие обученные перцептивные метрики** можно добавить в качестве исследовательских показателей, однако они зависят от предварительно обученной сети и версии модели. Они не должны заменять прозрачные пиксельные/структурные метрики или визуальную оценку человеком в дипломной работе по классической интерполяции.
 
-No one metric completely describes image quality. Report metrics alongside enlarged crops and discuss blur, edge sharpness, ringing/halos, jaggedness, moiré, and texture preservation.
+Ни одна метрика полностью не описывает качество изображения. Приводите метрики вместе с увеличенными фрагментами и обсуждайте размытие, резкость границ, звон/ореолы, ступенчатость, муар и сохранение текстур.
 
-### 10.3 Runtime and statistical reporting
+### 10.3 Время выполнения и статистическая отчётность
 
-Measure the resampling computation separately from image loading, saving, display, and disk I/O. Use the same hardware and software environment, warm up each method, repeat measurements, and report a robust statistic such as median and interquartile range. Record image size, source/output dimensions, scaling factor, CPU, OS, Python, NumPy, Pillow/OpenCV/SciPy versions, and threading settings. Avoid treating one runtime measurement as conclusive.
+Измеряйте вычисления передискретизации отдельно от загрузки, сохранения и отображения изображений и дискового ввода-вывода. Используйте одинаковое аппаратное и программное окружение, прогревайте каждый метод, повторяйте измерения и сообщайте устойчивую статистику, например медиану и межквартильный размах. Фиксируйте размер изображения, размеры исходного/целевого изображений, коэффициент масштабирования, процессор, ОС, версии Python, NumPy, Pillow/OpenCV/SciPy и настройки потоков. Не считайте один замер времени окончательным доказательством.
 
-For a separable kernel with $K$ taps per axis, a naive two-dimensional convolution needs roughly $K^2$ products per output pixel; two one-dimensional passes need roughly $2K$. This makes separability an important efficiency property. Actual runtime will also depend on vectorization, memory access, cache behaviour, language-level loops, and native library implementations.
+Для сепарабельного ядра с $K$ отсчётами поддержки на каждой оси наивная двумерная свёртка требует примерно $K^2$ умножений на выходной пиксель; два одномерных прохода — примерно $2K$. Поэтому сепарабельность является важным свойством с точки зрения эффективности. Фактическое время выполнения также зависит от векторизации, доступа к памяти, поведения кэша, циклов на уровне языка и реализаций в нативных библиотеках.
 
-## 11. Implications for the thesis project
+## 11. Выводы для дипломного проекта
 
-A strong comparative thesis could be structured around the following questions:
+Сильную сравнительную дипломную работу можно построить вокруг следующих вопросов:
 
-1. How do nearest, bilinear, Keys bicubic, B-spline, and Lanczos differ in spatial and frequency-domain behaviour?
-2. How does performance change for enlargement versus reduction, especially when anti-aliasing is enabled?
-3. How much of the output difference between libraries is caused by kernel choice versus coordinate mapping, edge policy, and numeric precision?
-4. How do image class and degradation process change the ranking under MSE, PSNR, SSIM, and visual inspection?
-5. What quality/runtime trade-offs are observed for Python/NumPy implementations compared with optimized native-library routines?
+1. Чем отличаются ближайший сосед, билинейный метод, бикубический Keys, B-сплайн и Lanczos с точки зрения поведения в пространственной и частотной областях?
+2. Как меняется производительность при увеличении и уменьшении, особенно при включённом подавлении наложения спектров?
+3. Какая доля различий между результатами библиотек обусловлена выбором ядра, а какая — отображением координат, политикой обработки краёв и численной точностью?
+4. Как класс изображения и процесс ухудшения меняют рейтинг по MSE, PSNR, SSIM и визуальной оценке?
+5. Какие компромиссы между качеством и временем выполнения наблюдаются при сравнении реализаций Python/NumPy с оптимизированными процедурами нативных библиотек?
 
-The current from-scratch implementation goes beyond the initial four-method
-baseline. It includes nearest, bilinear, Keys bicubic, Mitchell--Netravali,
-coefficient-prefiltered cubic B-spline, Lanczos-3, and exact area resampling.
-It also makes coordinate mode and boundary extension configurable, and
-implements MSE, PSNR and a documented uniform-window SSIM variant directly
-with NumPy. The detailed equations and implementation choices are in
-[`implementation-from-scratch.md`](implementation-from-scratch.md).
+Текущая самостоятельная реализация выходит за рамки первоначальной базовой версии из четырёх методов. Она включает ближайшего соседа, билинейную интерполяцию, бикубический метод Keys, Mitchell--Netravali, кубический B-сплайн с предварительной фильтрацией коэффициентов, Lanczos-3 и точную передискретизацию по площади. Кроме того, режим координат и расширение границ настраиваются, а MSE, PSNR и документированный вариант SSIM с равномерным окном реализованы непосредственно на NumPy. Подробные уравнения и решения реализации приведены в [`implementation-from-scratch.md`](implementation-from-scratch.md).
 
-Further research extensions could include:
+В качестве дальнейших исследовательских расширений можно рассмотреть:
 
-- **Edge-directed interpolation** such as NEDI, treated separately from fixed
-  linear kernels.
-- **EWA resampling** for arbitrary affine/projective warps with an elliptical
-  source footprint.
-- **Linear-light colour and premultiplied-alpha filtering** as explicit
-  experimental modes.
-- **Polyphase or recursive implementations** for performance comparisons.
-- **Learned super-resolution** as a distinct comparison category, not as a
-  classical interpolation kernel.
-- Diagnostics for kernel plots, frequency response, impulse response,
-  step-edge response, constant preservation, linear-ramp reproduction and
-  boundary behaviour.
+- **Интерполяцию с учётом границ**, например NEDI, отдельно от фильтров с фиксированными линейными ядрами.
+- **Передискретизацию EWA** для произвольных аффинных/проективных преобразований с эллиптическим отпечатком исходной области.
+- **Фильтрацию с линейной яркостью и предварительно умноженным альфа-каналом** в качестве явных экспериментальных режимов.
+- **Полифазные или рекурсивные реализации** для сравнения производительности.
+- **Обученное сверхразрешение** как отдельную категорию сравнения, а не как классическое интерполяционное ядро.
+- Диагностику графиков ядер, частотной характеристики, импульсного отклика, отклика на ступенчатую границу, сохранения констант, воспроизведения линейной рампы и поведения на границах.
 
-These extensions should be added as separately defined experiments so that a
-fixed-kernel comparison does not conflate fundamentally different problem
-classes.
+Эти расширения следует добавлять как отдельные эксперименты, чтобы сравнение фильтров с фиксированным ядром не смешивало принципиально разные классы задач.
 
-## 12. Selected bibliography and online resources
+## 12. Избранная библиография и сетевые ресурсы
 
-The following sources range from mathematical foundations to original algorithm papers and current implementation documentation. Page and equation numbers should be checked in the cited original document when preparing formal thesis citations.
+Следующие источники охватывают математические основы, оригинальные статьи об алгоритмах и актуальную документацию реализаций. При подготовке формальных ссылок для дипломной работы следует сверять номера страниц и уравнений с цитируемым оригинальным документом.
 
-1. **MIT Foundations of Computer Vision**, “Image Sampling and Aliasing” and “Downsampling and Upsampling Images.” Clear derivations of sampling, Nyquist, sinc reconstruction, anti-alias filtering, decimation, expansion, and interpolation kernels. <https://visionbook.mit.edu/sampling_and_aliasing.html> · <https://visionbook.mit.edu/upsamplig_downsampling_2.html>
-2. **R. G. Keys**, “Cubic Convolution Interpolation for Digital Image Processing,” *IEEE Transactions on Acoustics, Speech, and Signal Processing*, 29(6), 1153–1160, 1981. Original derivation of the cubic-convolution kernel and its accuracy conditions. DOI: <https://doi.org/10.1109/TASSP.1981.1163711> · accessible paper: <https://lapi.fi-p.unam.mx/wp-content/uploads/Articulo_CubConvInterp.pdf>
-3. **D. P. Mitchell and A. N. Netravali**, “Reconstruction Filters in Computer Graphics,” *Computer Graphics* (SIGGRAPH), 22(4), 221–228, 1988. Studies reconstruction artefacts and the two-parameter cubic filter family. DOI: <https://doi.org/10.1145/378456.378514>
-4. **M. Unser**, “Splines: A Perfect Fit for Signal and Image Processing,” *IEEE Signal Processing Magazine*, 16(6), 22–38, 1999. Tutorial on B-spline representation, interpolation prefilters, approximation, and links to wavelets. DOI: <https://doi.org/10.1109/79.799930> · <https://bigwww.epfl.ch/publications/unser9902.html> · PDF: <https://bigwww.epfl.ch/publications/unser9902.pdf>
-5. **P. Thévenaz, T. Blu, and M. Unser**, “Interpolation Revisited,” *IEEE Transactions on Medical Imaging*, 19(7), 739–758, 2000. Unified approximation-theoretic treatment of interpolation, basis functions, approximation order, and generalized interpolation. DOI: <https://doi.org/10.1109/42.875199> · <https://bigwww.epfl.ch/publications/thevenaz0002.html>
-6. **P. S. Heckbert**, “Fundamentals of Texture Mapping and Image Warping,” UC Berkeley Technical Report UCB/CSD-89-516, 1989. Important background for arbitrary geometric mapping and space-varying anti-alias filters. <https://www2.eecs.berkeley.edu/Pubs/TechRpts/1989/5504.html>
-7. **X. Li and M. T. Orchard**, “New Edge-Directed Interpolation,” *IEEE Transactions on Image Processing*, 10(10), 1521–1527, 2001. Covariance-based, orientation-adaptive interpolation for natural images. DOI: <https://doi.org/10.1109/83.951537> · paper: <https://www.ece.lsu.edu/gunturk/EE7700/NEDI.pdf>
-8. **Z. Wang, A. C. Bovik, H. R. Sheikh, and E. P. Simoncelli**, “Image Quality Assessment: From Error Visibility to Structural Similarity,” *IEEE Transactions on Image Processing*, 13(4), 600–612, 2004. Original SSIM paper. DOI: <https://doi.org/10.1109/TIP.2003.819861> · <https://utw10503.utweb.utexas.edu/publications/2004/zwang_ssim_ieeeip2004.pdf>
-9. **Pillow**, Image and Concepts documentation. Available filters include nearest, box, bilinear, bicubic, and Lanczos; the documentation describes their intended behaviour and supported resize operations. <https://pillow.readthedocs.io/en/stable/reference/Image.html> · <https://pillow.readthedocs.io/en/stable/handbook/concepts.html>
-10. **SciPy**, `scipy.ndimage.zoom`. Documents spline interpolation order, the prefilter option, boundary extension modes, and the `grid_mode` coordinate convention. <https://docs.scipy.org/doc/scipy/reference/generated/scipy.ndimage.zoom.html>
-11. **OpenCV**, “Geometric Image Transformations.” Documents inverse mapping and common resize interpolation flags, including nearest, linear, cubic, area, and Lanczos. <https://docs.opencv.org/4.x/da/d54/group__imgproc__transform.html>
-12. **scikit-image**, `skimage.metrics`. Reference documentation for MSE, PSNR, SSIM, and related metrics. <https://scikit-image.org/docs/stable/api/skimage.metrics.html>
-13. **International Color Consortium**, sRGB colour encoding registry. Specifies the piecewise sRGB component transfer function. <https://registry.color.org/rgb-registry/srgb>
-14. **ImageMagick**, “Resampling Filters.” Practical discussion of filter support, windowed sinc filters, ringing, blurring, aliasing, and filter parameter trade-offs. <https://usage.imagemagick.org/filter/>
-15. **R. C. Gonzalez and R. E. Woods**, *Digital Image Processing*, 4th ed., Pearson, 2018. Broad textbook treatment of image fundamentals and interpolation for geometric transformations. Publisher information: <https://www.pearson.com/en-us/subject-catalog/p/digital-image-processing/P200000003190/9780133356724>.
+1. **MIT Foundations of Computer Vision**, «Image Sampling and Aliasing» и «Downsampling and Upsampling Images». Понятные выводы дискретизации, частоты Найквиста, реконструкции sinc, фильтрации для подавления наложения спектров, децимации, расширения и интерполяционных ядер. <https://visionbook.mit.edu/sampling_and_aliasing.html> · <https://visionbook.mit.edu/upsamplig_downsampling_2.html>
+2. **R. G. Keys**, «Cubic Convolution Interpolation for Digital Image Processing», *IEEE Transactions on Acoustics, Speech, and Signal Processing*, 29(6), 1153–1160, 1981. Оригинальный вывод ядра кубической свёртки и условий его точности. DOI: <https://doi.org/10.1109/TASSP.1981.1163711> · доступная статья: <https://lapi.fi-p.unam.mx/wp-content/uploads/Articulo_CubConvInterp.pdf>
+3. **D. P. Mitchell и A. N. Netravali**, «Reconstruction Filters in Computer Graphics», *Computer Graphics* (SIGGRAPH), 22(4), 221–228, 1988. Исследование артефактов реконструкции и двухпараметрического семейства кубических фильтров. DOI: <https://doi.org/10.1145/378456.378514>
+4. **M. Unser**, «Splines: A Perfect Fit for Signal and Image Processing», *IEEE Signal Processing Magazine*, 16(6), 22–38, 1999. Учебный обзор представления B-сплайнами, интерполяционных предварительных фильтров, аппроксимации и связей с вейвлетами. DOI: <https://doi.org/10.1109/79.799930> · <https://bigwww.epfl.ch/publications/unser9902.html> · PDF: <https://bigwww.epfl.ch/publications/unser9902.pdf>
+5. **P. Thévenaz, T. Blu и M. Unser**, «Interpolation Revisited», *IEEE Transactions on Medical Imaging*, 19(7), 739–758, 2000. Единый теоретико-аппроксимационный подход к интерполяции, базисным функциям, порядку аппроксимации и обобщённой интерполяции. DOI: <https://doi.org/10.1109/42.875199> · <https://bigwww.epfl.ch/publications/thevenaz0002.html>
+6. **P. S. Heckbert**, «Fundamentals of Texture Mapping and Image Warping», технический отчёт UC Berkeley UCB/CSD-89-516, 1989. Важная основа для произвольных геометрических отображений и пространственно изменяющихся фильтров подавления наложения спектров. <https://www2.eecs.berkeley.edu/Pubs/TechRpts/1989/5504.html>
+7. **X. Li и M. T. Orchard**, «New Edge-Directed Interpolation», *IEEE Transactions on Image Processing*, 10(10), 1521–1527, 2001. Интерполяция естественных изображений с адаптацией к ориентации на основе ковариации. DOI: <https://doi.org/10.1109/83.951537> · статья: <https://www.ece.lsu.edu/gunturk/EE7700/NEDI.pdf>
+8. **Z. Wang, A. C. Bovik, H. R. Sheikh и E. P. Simoncelli**, «Image Quality Assessment: From Error Visibility to Structural Similarity», *IEEE Transactions on Image Processing*, 13(4), 600–612, 2004. Оригинальная статья о SSIM. DOI: <https://doi.org/10.1109/TIP.2003.819861> · <https://utw10503.utweb.utexas.edu/publications/2004/zwang_ssim_ieeeip2004.pdf>
+9. **Pillow**, документация по изображениям и концепциям. Доступные фильтры включают nearest, box, bilinear, bicubic и Lanczos; документация описывает их предполагаемое поведение и поддерживаемые операции изменения размера. <https://pillow.readthedocs.io/en/stable/reference/Image.html> · <https://pillow.readthedocs.io/en/stable/handbook/concepts.html>
+10. **SciPy**, `scipy.ndimage.zoom`. Документирует порядок сплайн-интерполяции, параметр предварительной фильтрации, режимы расширения границ и соглашение о координатах `grid_mode`. <https://docs.scipy.org/doc/scipy/reference/generated/scipy.ndimage.zoom.html>
+11. **OpenCV**, «Geometric Image Transformations». Документирует обратное отображение координат и распространённые флаги интерполяции при изменении размера, включая nearest, linear, cubic, area и Lanczos. <https://docs.opencv.org/4.x/da/d54/group__imgproc__transform.html>
+12. **scikit-image**, `skimage.metrics`. Справочная документация по MSE, PSNR, SSIM и связанным метрикам. <https://scikit-image.org/docs/stable/api/skimage.metrics.html>
+13. **International Color Consortium**, реестр кодирования цвета sRGB. Специфицирует кусочную передаточную функцию компонентов sRGB. <https://registry.color.org/rgb-registry/srgb>
+14. **ImageMagick**, «Resampling Filters». Практическое обсуждение области поддержки фильтров, оконных sinc-фильтров, звона, размытия, наложения спектров и компромиссов параметров фильтров. <https://usage.imagemagick.org/filter/>
+15. **R. C. Gonzalez и R. E. Woods**, *Digital Image Processing*, 4-е изд., Pearson, 2018. Широкий учебник по основам изображений и интерполяции при геометрических преобразованиях. Информация издателя: <https://www.pearson.com/en-us/subject-catalog/p/digital-image-processing/P200000003190/9780133356724>.
 
-## 13. Search and citation notes
+## 13. Примечания к поиску источников и цитированию
 
-This chapter synthesizes the linked papers and documentation for study. It is not a replacement for reading and citing the original publication. For a formal thesis, cite the original paper or standard where the claim originates, verify its exact publication metadata, and use a consistent citation style required by the university. Library documentation is appropriate when describing what a particular software implementation does; it is not a substitute for the mathematical source of an algorithm.
+Эта глава объединяет для изучения связанные статьи и документацию. Она не заменяет чтение и цитирование оригинальной публикации. Для формальной дипломной работы цитируйте оригинальную статью или стандарт, из которого взято утверждение, проверяйте точные библиографические данные и используйте единый стиль оформления, требуемый университетом. Документация библиотеки уместна при описании поведения конкретной программной реализации, но не заменяет математический первоисточник алгоритма.
 
-### Additional implementation-source references
+### Дополнительные ссылки на исходный код реализаций
 
-- **Pillow**, [C resampling implementation](https://github.com/python-pillow/Pillow/blob/main/src/libImaging/Resample.c). Source for the bicubic parameter `a = -0.5` and Lanczos support radius 3.
-- **OpenCV**, [4.x resize implementation](https://github.com/opencv/opencv/blob/4.x/modules/imgproc/src/resize.cpp). Source for the cubic parameter `A = -0.75` and the Lanczos4 coefficient construction.
+- **Pillow**, [реализация передискретизации на C](https://github.com/python-pillow/Pillow/blob/main/src/libImaging/Resample.c). Источник параметра бикубической интерполяции `a = -0.5` и радиуса поддержки Lanczos 3.
+- **OpenCV**, [реализация изменения размера в ветке 4.x](https://github.com/opencv/opencv/blob/4.x/modules/imgproc/src/resize.cpp). Источник кубического параметра `A = -0.75` и построения коэффициентов Lanczos4.
 
-## 14. Companion implementation chapter
+## 14. Сопутствующая глава о реализации
 
-The complete equations used by the current Python implementation, including
-the Keys and Mitchell cubic kernels, cubic B-spline coefficient prefilter,
-Lanczos window, area-overlap weights, separable tap calculation, boundary
-models, and NumPy-only MSE/PSNR/SSIM calculations, are documented in
-[`implementation-from-scratch.md`](implementation-from-scratch.md). The code is
-an independent implementation based on the cited mathematics, not copied
-source from an existing interpolation library.
+Полные уравнения, используемые текущей реализацией Python, включая кубические ядра Keys и Mitchell, предварительную фильтрацию коэффициентов кубического B-сплайна, окно Lanczos, веса перекрытия площадей, расчёт сепарабельных отсчётов, модели границ и вычисления MSE/PSNR/SSIM только средствами NumPy, описаны в [`implementation-from-scratch.md`](implementation-from-scratch.md). Код представляет собой независимую реализацию, основанную на цитируемой математике, а не скопированный исходный код существующей библиотеки интерполяции.

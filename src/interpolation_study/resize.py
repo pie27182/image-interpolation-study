@@ -1,16 +1,17 @@
-"""Image resampling implemented directly from mathematical kernels.
+"""Передискретизация изображений, реализованная непосредственно на основе математических ядер.
 
-The only computational dependency is NumPy.  Pillow, OpenCV, SciPy and
-scikit-image are not imported or called here.
+Единственная вычислительная зависимость — NumPy. Pillow, OpenCV, SciPy и
+scikit-image здесь не импортируются и не вызываются.
 
-Default coordinates use the half-pixel-centre convention:
+По умолчанию используется соглашение о координатах с полуцелым центром:
 
     x_source = (x_destination + 1/2) * source_length / destination_length - 1/2
 
-Filtering is separable (horizontal then vertical).  During reduction, compact
-kernels are widened in source coordinates to provide a scale-aware low-pass
-filter.  ``area`` instead integrates exact one-dimensional pixel-footprint
-overlaps and is especially useful for shrinking images.
+Фильтрация сепарабельна (сначала по горизонтали, затем по вертикали).
+При уменьшении компактные ядра расширяются в координатах исходного
+изображения, обеспечивая низкочастотную фильтрацию с учётом масштаба.
+Метод ``area`` вместо этого точно интегрирует одномерные перекрытия
+пиксельных отпечатков и особенно полезен для уменьшения изображений.
 """
 
 from __future__ import annotations
@@ -33,9 +34,9 @@ METHODS = (
 )
 BOUNDARIES = ("clamp", "reflect", "wrap", "constant")
 COORDINATE_MODES = ("half_pixel", "align_corners")
-# Limit temporary gather arrays for large images.  The output is evaluated in
-# slices along the resized axis so memory use does not scale with the full
-# destination length times the kernel support.
+# Ограничить размер временных массивов выборки для больших изображений.
+# Результат вычисляется фрагментами вдоль изменяемой оси, поэтому расход
+# памяти не растёт пропорционально полной длине целевой оси и поддержке ядра.
 _MAX_GATHER_BYTES = 64 * 1024 * 1024
 
 _KERNELS: dict[str, tuple[Kernel, float]] = {
@@ -50,17 +51,17 @@ _KERNELS: dict[str, tuple[Kernel, float]] = {
 def _as_image_array(image: np.ndarray) -> np.ndarray:
     array = np.asarray(image)
     if array.ndim not in (2, 3):
-        raise ValueError("image must be a 2-D grayscale or 3-D channel array")
+        raise ValueError("изображение должно быть двумерным массивом в градациях серого или трёхмерным массивом каналов")
     if array.shape[0] < 1 or array.shape[1] < 1:
-        raise ValueError("image dimensions must be non-zero")
+        raise ValueError("размеры изображения должны быть ненулевыми")
     if array.ndim == 3 and array.shape[2] < 1:
-        raise ValueError("image must contain at least one channel")
+        raise ValueError("изображение должно содержать хотя бы один канал")
     if not np.issubdtype(array.dtype, np.number):
-        raise TypeError("image must contain numeric values")
+        raise TypeError("изображение должно содержать числовые значения")
     if np.issubdtype(array.dtype, np.complexfloating):
-        raise TypeError("complex-valued images are not supported")
+        raise TypeError("изображения с комплексными значениями не поддерживаются")
     if not np.all(np.isfinite(array)):
-        raise ValueError("image must contain only finite values")
+        raise ValueError("изображение должно содержать только конечные значения")
     return array.astype(np.float64, copy=False)
 
 
@@ -79,17 +80,18 @@ def _source_positions(
             scale = (source_length - 1.0) / (destination_length - 1.0)
     else:
         raise ValueError(
-            f"unknown coordinate mode {coordinate_mode!r}; choose from {', '.join(COORDINATE_MODES)}"
+            f"неизвестный режим координат {coordinate_mode!r}; выберите один из вариантов: {', '.join(COORDINATE_MODES)}"
         )
     return positions, scale
 
 
 def _map_indices(indices: np.ndarray, length: int, boundary: str) -> tuple[np.ndarray, np.ndarray]:
-    """Map integer sample indices to the source extent.
+    """Отобразить целочисленные индексы отсчётов в пределах исходного изображения.
 
-    ``reflect`` is whole-sample symmetric reflection (index -1 maps to 1),
-    often called reflect-101.  ``constant`` retains a validity mask so that
-    out-of-range taps contribute the caller's constant value.
+    Режим ``reflect`` означает симметричное отражение относительно целого
+    отсчёта (индекс -1 отображается в 1); его также называют reflect-101.
+    Для режима ``constant`` сохраняется маска допустимости, чтобы отсчёты
+    за пределами изображения получили заданное вызывающим кодом постоянное значение.
     """
     valid = (indices >= 0) & (indices < length)
     if boundary == "constant":
@@ -106,7 +108,7 @@ def _map_indices(indices: np.ndarray, length: int, boundary: str) -> tuple[np.nd
             folded = np.mod(indices, period)
             mapped = np.where(folded < length, folded, period - folded)
         return mapped.astype(np.intp, copy=False), np.ones(indices.shape, dtype=bool)
-    raise ValueError(f"unknown boundary mode {boundary!r}; choose from {', '.join(BOUNDARIES)}")
+    raise ValueError(f"неизвестный режим границ {boundary!r}; выберите один из вариантов: {', '.join(BOUNDARIES)}")
 
 
 def _axis_kernel_contributions(
@@ -120,7 +122,7 @@ def _axis_kernel_contributions(
     coordinate_mode: str,
     kernel_kwargs: dict[str, float] | None = None,
 ) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
-    """Precompute source indices, validity flags and normalized tap weights."""
+    """Заранее вычислить исходные индексы, флаги допустимости и нормированные веса отсчётов."""
     positions, scale = _source_positions(source_length, destination_length, coordinate_mode)
     filter_scale = max(1.0, scale) if antialias else 1.0
     support = radius * filter_scale
@@ -138,12 +140,12 @@ def _axis_kernel_contributions(
         tap_weights = kernel(distances, **kwargs) if kwargs else kernel(distances)
         total = float(np.sum(tap_weights))
         if not np.isfinite(total) or abs(total) < 1e-12:
-            raise ArithmeticError("interpolation kernel produced a near-zero or invalid weight sum")
+            raise ArithmeticError("ядро интерполяции вернуло близкую к нулю или недопустимую сумму весов")
         tap_weights = tap_weights / total
         mapped, is_valid = _map_indices(source_indices, source_length, boundary)
         count = source_indices.size
         if count > max_taps:
-            raise RuntimeError("internal tap allocation was too small")
+            raise RuntimeError("внутреннего буфера отсчётов оказалось недостаточно")
         indices[out_index, :count] = mapped
         valid[out_index, :count] = is_valid
         weights[out_index, :count] = tap_weights
@@ -154,11 +156,11 @@ def _axis_kernel_contributions(
 def _axis_area_contributions(
     source_length: int, destination_length: int
 ) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
-    """Exact overlap between destination footprints and source pixel cells.
+    """Точное перекрытие целевых отпечатков с ячейками исходных пикселей.
 
-    Source pixel i occupies [i-1/2, i+1/2].  Destination cell j covers the
-    corresponding interval [j*s-1/2, (j+1)*s-1/2] in source coordinates.
-    Its weights are overlap lengths divided by the destination footprint size.
+    Исходный пиксель i занимает [i-1/2, i+1/2]. Целевая ячейка j покрывает
+    соответствующий интервал [j*s-1/2, (j+1)*s-1/2] в исходных координатах.
+    Её веса равны длинам перекрытия, делённым на размер целевого отпечатка.
     """
     scale = source_length / destination_length
     max_taps = int(np.ceil(scale)) + 2
@@ -176,7 +178,7 @@ def _axis_area_contributions(
         overlap = np.maximum(0.0, np.minimum(right, cell_right) - np.maximum(left, cell_left))
         total = float(overlap.sum())
         if total <= 0.0:
-            raise ArithmeticError("area resampling generated an empty pixel footprint")
+            raise ArithmeticError("при передискретизации по площади получен пустой пиксельный отпечаток")
         count = source_indices.size
         indices[out_index, :count] = source_indices
         weights[out_index, :count] = overlap / total
@@ -202,7 +204,7 @@ def _resize_axis(
         indices, valid, weights = _axis_area_contributions(source_length, destination_length)
     else:
         if kernel is None:
-            raise ValueError("a reconstruction kernel is required")
+            raise ValueError("требуется реконструкционное ядро")
         indices, valid, weights = _axis_kernel_contributions(
             source_length,
             destination_length,
@@ -242,15 +244,16 @@ def _resize_axis(
 
 
 def _spline_prefilter_axis(image: np.ndarray, axis: int, boundary: str) -> np.ndarray:
-    """Solve the cubic B-spline sample-to-coefficient system along one axis.
+    """Решить вдоль одной оси систему перехода от отсчётов к коэффициентам кубического B-сплайна.
 
-    At integer knots, beta_3(0)=2/3 and beta_3(+-1)=1/6.  Mirror extension
-    gives endpoint off-diagonal 1/3; edge-clamp extension gives endpoint
-    diagonal 5/6 and off-diagonal 1/6.  The resulting system is tridiagonal,
-    so a vectorized Thomas algorithm solves all rows/columns in O(n) per line.
+    В целочисленных узлах beta_3(0)=2/3 и beta_3(+-1)=1/6.
+    Зеркальное продолжение даёт конечный внедиагональный элемент 1/3;
+    продолжение с прижатием к краю — конечный диагональный элемент 5/6
+    и внедиагональный 1/6. Полученная система трёхдиагональна, поэтому
+    векторизованный алгоритм Томаса решает все строки/столбцы за O(n) на строку.
     """
     if boundary not in ("reflect", "clamp"):
-        raise ValueError("bspline3 supports only 'reflect' and 'clamp' boundaries")
+        raise ValueError("bspline3 поддерживает только граничные режимы 'reflect' и 'clamp'")
     moved = np.moveaxis(image, axis, 0)
     length = moved.shape[0]
     if length == 1:
@@ -263,7 +266,7 @@ def _spline_prefilter_axis(image: np.ndarray, axis: int, boundary: str) -> np.nd
     if boundary == "reflect":
         lower[-1] = 1.0 / 3.0
         upper[0] = 1.0 / 3.0
-    else:  # constant extension of the spline coefficients at the endpoints
+    else:  # постоянное продолжение коэффициентов сплайна на концах
         diagonal[0] = 5.0 / 6.0
         diagonal[-1] = 5.0 / 6.0
 
@@ -324,58 +327,62 @@ def resize(
     mitchell_b: float = 1.0 / 3.0,
     mitchell_c: float = 1.0 / 3.0,
 ) -> np.ndarray:
-    """Resize a grayscale or multichannel image using NumPy-only algorithms.
+    """Изменить размер одноканального или многоканального изображения алгоритмами только на NumPy.
 
     Args:
-        image: HxW grayscale or HxWxC array. Values are converted to float64.
-        size: Destination ``(width, height)``.
-        method: nearest, bilinear, bicubic (Keys), mitchell, bspline3, lanczos3 or area.
-        antialias: Widen reconstruction kernels for reduction. ``area`` is exact
-            footprint integration and does not use this flag or point-kernel options.
-        boundary: ``clamp``, ``reflect``, ``wrap`` or ``constant`` extension.
-            Here ``reflect`` is whole-sample symmetric (index -1 maps to 1),
-            matching SciPy ``mirror`` / OpenCV ``BORDER_REFLECT_101``. Cubic
-            B-spline coefficient prefiltering supports clamp and reflect. The
-            ``area`` method uses source pixel footprints and ignores this option.
-        coordinate_mode: ``half_pixel`` or ``align_corners``. The ``area``
-            method uses exact source pixel-cell footprints and ignores this option.
-        cval: Constant boundary value when ``boundary='constant'``.
-        keys_a: Parameter of the Keys cubic-convolution family (default -0.5).
-        mitchell_b, mitchell_c: Parameters of the Mitchell-Netravali cubic family.
+        image: массив HxW в градациях серого или HxWxC. Значения преобразуются в float64.
+        size: целевой размер ``(width, height)``.
+        method: nearest, bilinear, bicubic (Keys), mitchell, bspline3, lanczos3 или area.
+        antialias: расширять реконструкционные ядра при уменьшении. ``area``
+            выполняет точное интегрирование отпечатка и не использует этот
+            флаг или параметры точечных ядер.
+        boundary: продолжение за границами: ``clamp``, ``reflect``, ``wrap``
+            или ``constant``. Здесь ``reflect`` означает симметрию
+            относительно целого отсчёта (индекс -1 отображается в 1),
+            как в SciPy ``mirror`` / OpenCV ``BORDER_REFLECT_101``.
+            Предварительная фильтрация коэффициентов кубического B-сплайна
+            поддерживает clamp и reflect. Метод ``area`` использует
+            отпечатки исходных пикселей и игнорирует этот параметр.
+        coordinate_mode: ``half_pixel`` или ``align_corners``. Метод
+            ``area`` использует точные отпечатки исходных ячеек пикселей
+            и игнорирует этот параметр.
+        cval: постоянное значение за границами при ``boundary='constant'``.
+        keys_a: параметр семейства кубической свёртки Keys (по умолчанию -0.5).
+        mitchell_b, mitchell_c: параметры кубического семейства Mitchell-Netravali.
 
     Returns:
-        A float64 array with dimensions (height, width[, channels]).
+        Массив float64 с размерностями (height, width[, channels]).
 
     Notes:
-        This function does not call Pillow, OpenCV, SciPy, scikit-image or any
-        other image interpolation/resizing implementation. NumPy is used only
-        for array storage and elementary numerical operations.
+        Эта функция не вызывает Pillow, OpenCV, SciPy, scikit-image или любую
+        другую реализацию интерполяции/изменения размера изображений. NumPy
+        используется только для хранения массивов и элементарных численных операций.
     """
     array = _as_image_array(image)
     if not isinstance(size, (tuple, list)) or len(size) != 2:
-        raise ValueError("size must be a (width, height) pair")
+        raise ValueError("size должен быть парой значений (width, height)")
     width, height = size
     if not isinstance(width, (int, np.integer)) or not isinstance(height, (int, np.integer)):
-        raise TypeError("target width and height must be integers")
+        raise TypeError("целевая ширина и высота должны быть целыми числами")
     width, height = int(width), int(height)
     if width <= 0 or height <= 0:
-        raise ValueError("target width and height must be positive")
+        raise ValueError("целевая ширина и высота должны быть положительными")
     method = method.lower()
     if method not in METHODS:
-        raise ValueError(f"unknown method {method!r}; choose from {', '.join(METHODS)}")
+        raise ValueError(f"неизвестный метод {method!r}; выберите один из вариантов: {', '.join(METHODS)}")
     if boundary not in BOUNDARIES:
-        raise ValueError(f"unknown boundary mode {boundary!r}; choose from {', '.join(BOUNDARIES)}")
+        raise ValueError(f"неизвестный режим границ {boundary!r}; выберите один из вариантов: {', '.join(BOUNDARIES)}")
     if coordinate_mode not in COORDINATE_MODES:
         raise ValueError(
-            f"unknown coordinate mode {coordinate_mode!r}; choose from {', '.join(COORDINATE_MODES)}"
+            f"неизвестный режим координат {coordinate_mode!r}; выберите один из вариантов: {', '.join(COORDINATE_MODES)}"
         )
     if not np.isfinite(cval):
-        raise ValueError("cval must be finite")
+        raise ValueError("cval должен быть конечным числом")
     if method == "bspline3" and boundary not in ("reflect", "clamp"):
-        raise ValueError("bspline3 supports only 'reflect' and 'clamp' boundaries")
+        raise ValueError("bspline3 поддерживает только граничные режимы 'reflect' и 'clamp'")
 
-    # A resampling operation whose grid is unchanged is exactly the identity,
-    # including for non-cardinal reconstruction filters such as Mitchell.
+    # Операция передискретизации без изменения сетки в точности тождественна,
+    # в том числе для некардинальных реконструкционных фильтров, таких как Mitchell.
     if array.shape[1] == width and array.shape[0] == height:
         return array.copy()
 
