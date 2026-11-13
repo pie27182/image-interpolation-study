@@ -181,7 +181,7 @@ A centred one-dimensional box basis can be described (up to the tie convention a
 $$
  \varphi_{NN}(x)=
  \begin{cases}
- 1,&|x|<\tfrac12,\\
+ 1,&\lvert x \rvert<\tfrac12,\\
  0,&\text{otherwise}.
  \end{cases}
 $$
@@ -199,7 +199,7 @@ $$
 Its triangular reconstruction kernel is
 
 $$
- \varphi_{lin}(x)=\max(1-|x|,0).
+ \varphi_{lin}(x)=\max(1-\lvert x \rvert,0).
 $$
 
 For a two-dimensional point, set $i=\lfloor x\rfloor$, $j=\lfloor y\rfloor$, $t_x=x-i$, and $t_y=y-j$. The bilinear value is
@@ -221,7 +221,7 @@ This is a weighted average of the four corners of the containing cell. It is a l
 
 #### Keys cubic convolution
 
-Keys derived a piecewise cubic convolution kernel. In normalized coordinates $r=|x|$, its one-dimensional form is
+Keys derived a piecewise cubic convolution kernel. In normalized coordinates $r=\lvert x \rvert$, its one-dimensional form is
 
 $$
  K_a(x)=
@@ -272,9 +272,9 @@ The cubic B-spline basis function is
 $$
 \beta^3(x)=
 \begin{cases}
-\frac23-|x|^2+\frac{|x|^3}{2},&0\le|x|<1,\\
-\frac{(2-|x|)^3}{6},&1\le|x|<2,\\
-0,&|x|\ge2.
+\frac23-\lvert x \rvert^2+\frac{\lvert x \rvert^3}{2},&0\le\lvert x \rvert<1,\\
+\frac{(2-\lvert x \rvert)^3}{6},&1\le\lvert x \rvert<2,\\
+0,&\lvert x \rvert\ge2.
 \end{cases}
 $$
 
@@ -289,8 +289,8 @@ The Lanczos kernel is a windowed sinc. With radius $a>0$,
 $$
  K_{L,a}(x)=
  \begin{cases}
- \mathrm{sinc}(x)\mathrm{sinc}(x/a),&|x|<a,\\
- 0,&|x|\ge a.
+ \mathrm{sinc}(x)\mathrm{sinc}(x/a),&\lvert x \rvert<a,\\
+ 0,&\lvert x \rvert\ge a.
  \end{cases}
 $$
 
@@ -303,7 +303,7 @@ Pillow describes Lanczos as a truncated sinc. ImageMagick's resampling guide exp
 When shrinking an image, a destination pixel covers a region of the source image. An area method estimates the average value over that source footprint:
 
 $$
- I_{out}[p,q]\approx\frac{1}{|A_{pq}|}
+ I_{out}[p,q]\approx\frac{1}{\lvert A_{pq} \rvert}
  \int_{A_{pq}} I(x,y)\,dx\,dy.
 $$
 
