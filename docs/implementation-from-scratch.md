@@ -177,13 +177,13 @@ coefficient prefilter is mathematically essential.
 The normalized sinc and radius-three windowed-sinc kernel are
 
 $$
- \operatorname{sinc}(x)=\frac{\sin(\pi x)}{\pi x},\quad
- \operatorname{sinc}(0)=1,
+ \mathrm{sinc}(x)=\frac{\sin(\pi x)}{\pi x},\quad
+ \mathrm{sinc}(0)=1,
 $$
 
 $$
  K_{L,3}(x)=\begin{cases}
- \operatorname{sinc}(x)\operatorname{sinc}(x/3),&|x|<3,\\
+ \mathrm{sinc}(x)\mathrm{sinc}(x/3),&|x|<3,\\
  0,&|x|\ge3.
  \end{cases}
 $$
@@ -239,9 +239,9 @@ The B-spline prefilter uses endpoint equations matched to the `reflect` or
 MSE and PSNR are direct NumPy calculations:
 
 $$
- \operatorname{MSE}=\frac1N\sum_n(I_n-\widehat I_n)^2,
+ \mathrm{MSE}=\frac1N\sum_n(I_n-\widehat I_n)^2,
  \qquad
- \operatorname{PSNR}=10\log_{10}\frac{L^2}{\operatorname{MSE}}.
+ \mathrm{PSNR}=10\log_{10}\frac{L^2}{\mathrm{MSE}}.
 $$
 
 An exact match has zero MSE and infinite PSNR. `data_range` is 255 by default
@@ -250,7 +250,7 @@ for 8-bit images and must be set to 1 for normalized [0,1] data.
 SSIM is implemented from its local statistics equation:
 
 $$
- \operatorname{SSIM}(x,y)=
+ \mathrm{SSIM}(x,y)=
  \frac{(2\mu_x\mu_y+C_1)(2\sigma_{xy}+C_2)}
  {(\mu_x^2+\mu_y^2+C_1)(\sigma_x^2+\sigma_y^2+C_2)}.
 $$
