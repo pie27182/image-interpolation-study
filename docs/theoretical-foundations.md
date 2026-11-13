@@ -12,9 +12,9 @@ $$
 
 where $(x,y)$ denotes spatial position and $C$ is the number of channels (one for grayscale, three for RGB, and so on). A digital image is a finite collection of values on a discrete lattice:
 
-$
+$$
  I[i,j,c],\qquad i=0,\ldots,W-1,\quad j=0,\ldots,H-1.
-$
+$$
 
 The digital array alone does not tell us what happens between its samples. To rotate, scale, warp, or otherwise transform the image, an algorithm needs a model of the underlying continuous image. **Interpolation** constructs or evaluates such a model at non-integer coordinates.
 
@@ -34,15 +34,15 @@ There are also two useful pixel models. In a point-sample model, $I[i,j]$ approx
 
 For a one-dimensional signal $f(x)$ sampled at spacing $T$, ideal point sampling produces
 
-$
+$$
  f_s[n]=f(nT).
-$
+$$
 
 An impulse-train representation is
 
-$
+$$
  f_{\delta}(x)=f(x)\sum_{n\in\mathbb Z}\delta(x-nT).
-$
+$$
 
 Multiplication by a periodic impulse train in the spatial domain creates periodic replicas of the signal spectrum in the Fourier domain. If those replicas overlap, different continuous frequencies become indistinguishable after sampling. This is **aliasing**. In images it can appear as jagged diagonal edges, false patterns, moiré, or texture that changes its apparent orientation or frequency.
 
@@ -50,9 +50,9 @@ Multiplication by a periodic impulse train in the spatial domain creates periodi
 
 Let the continuous signal be band-limited, with no spectral energy above angular frequency $\omega_{\max}$. Perfect reconstruction is possible under the ideal assumptions when the sampling angular frequency satisfies
 
-$
+$$
  \omega_s=\frac{2\pi}{T}>2\omega_{\max}.
-$
+$$
 
 Equivalently, the sampling period must be shorter than half the period of the highest frequency component. The corresponding Nyquist frequency is one half cycle per sample in normalized spatial units.
 
@@ -62,27 +62,27 @@ The theorem is powerful but its assumptions are important: exact band limitation
 
 Under the band-limited assumptions, the one-dimensional Whittaker–Shannon reconstruction formula is
 
-$
+$$
  f_r(x)=\sum_{n=-\infty}^{\infty} f_s[n]\,
  \operatorname{sinc}\!\left(\frac{x}{T}-n\right),
-$
+$$
 
 where the normalized sinc is
 
-$
+$$
  \operatorname{sinc}(u)=
  \begin{cases}
  \dfrac{\sin(\pi u)}{\pi u},&u\ne0,\\[4pt]
  1,&u=0.
  \end{cases}
-$
+$$
 
 For unit-spaced, two-dimensional samples, the separable ideal reconstruction is
 
-$
+$$
  \widehat I(x,y)=\sum_{i\in\mathbb Z}\sum_{j\in\mathbb Z}
  I[i,j]\,\operatorname{sinc}(x-i)\operatorname{sinc}(y-j).
-$
+$$
 
 The sinc is an ideal interpolating kernel: it equals one at zero and zero at every other integer. It preserves every frequency in the representable baseband and rejects frequencies outside it. Its limitations are practical: it has infinite support, decays slowly, requires infinitely many samples in theory, and its oscillatory side lobes can cause ringing when a finite approximation is used. MIT's sampling chapter derives this ideal reconstruction and explains why local kernels are used in practice.
 
@@ -103,33 +103,33 @@ No finite-support kernel perfectly achieves the ideal brick-wall low-pass respon
 
 A broad family of linear reconstruction methods can be expressed as
 
-$
+$$
  f_r(x)=\sum_{k\in\mathbb Z}c[k]\,\varphi(x-k),
-$
+$$
 
 where $\varphi$ is a basis or reconstruction function and $c[k]$ are expansion coefficients. For an interpolating basis,
 
-$
+$$
  \varphi(n)=\delta[n]
  \quad\Longrightarrow\quad c[k]=f_s[k].
-$
+$$
 
 The reconstructed function then passes through the input samples. This is the familiar cardinal-interpolation case.
 
 For a non-interpolating basis, the coefficients are not generally the sample values. At the integer sample locations,
 
-$
+$$
  f_s[n]=\sum_k c[k]\,\varphi(n-k).
-$
+$$
 
 This is a linear system. In matrix notation, $\mathbf f=\mathbf P\mathbf c$, so the coefficients must be computed as $\mathbf c=\mathbf P^{-1}\mathbf f$, subject to suitable boundary conditions. That prefiltering step is central to correct B-spline interpolation.
 
 For a separable two-dimensional basis,
 
-$
+$$
  I_r(x,y)=\sum_i\sum_j c[i,j]\,
  \varphi_x(x-i)\varphi_y(y-j).
-$
+$$
 
 If the same one-dimensional kernel is used on both axes, then $\varphi_x=\varphi_y=\varphi$. The separable form allows a two-dimensional operation to be performed as one horizontal pass followed by one vertical pass.
 
@@ -146,10 +146,10 @@ Common design conditions include:
 
 More generally, polynomial reproduction conditions can be written as
 
-$
+$$
  \sum_{k\in\mathbb Z} k^r\varphi(x-k)=x^r,
  \qquad r=0,\ldots,L-1.
-$
+$$
 
 These moment/reproduction conditions are closely connected to approximation order: how quickly an approximation error decreases as the sampling grid is refined. The exact relationship depends on the function space and assumptions, but Taylor expansion and Fourier-domain analysis are standard ways to derive error orders.
 
@@ -159,10 +159,10 @@ A kernel need not have only positive weights. Negative lobes can retain high-fre
 
 For an output pixel at destination coordinate $(p,q)$, first map it back to the corresponding source coordinate $(x_s,y_s)$. A separable resampler can then be written as
 
-$
+$$
  I_{out}[p,q]=\sum_i\sum_j I_{in}[i,j]
  K_x(x_s-i)K_y(y_s-j),
-$
+$$
 
 with appropriate normalization and boundary extension. This equation is the core abstraction behind many resize routines. The algorithm is determined not only by the word used for the kernel, but also by the coordinate map, kernel parameters, filter dilation, edge policy, precision, and rounding.
 
@@ -172,19 +172,19 @@ with appropriate normalization and boundary extension. This equation is the core
 
 Choose the source sample whose centre is closest to the query coordinate:
 
-$
+$$
  \widehat f(x)=f_s[\operatorname{round}(x)].
-$
+$$
 
 A centred one-dimensional box basis can be described (up to the tie convention at exactly half-integer positions) by
 
-$
+$$
  \varphi_{NN}(x)=
  \begin{cases}
  1,&|x|<\tfrac12,\\
  0,&\text{otherwise}.
  \end{cases}
-$
+$$
 
 The reconstructed function is piecewise constant. It is exceptionally cheap and does not invent intermediate class values, which is why nearest-neighbour is appropriate for segmentation masks, label maps, categorical rasters, and pixel art. It gives blocky enlargements and jagged transformed edges for photographs, and point-sampling during reduction can alias badly.
 
@@ -192,26 +192,26 @@ The reconstructed function is piecewise constant. It is exceptionally cheap and 
 
 For a one-dimensional query $x$, let $i=\lfloor x\rfloor$ and $t=x-i$. Linear interpolation is
 
-$
+$$
  \widehat f(x)=(1-t)f_s[i]+t f_s[i+1].
-$
+$$
 
 Its triangular reconstruction kernel is
 
-$
+$$
  \varphi_{lin}(x)=\max(1-|x|,0).
-$
+$$
 
 For a two-dimensional point, set $i=\lfloor x\rfloor$, $j=\lfloor y\rfloor$, $t_x=x-i$, and $t_y=y-j$. The bilinear value is
 
-$
+$$
 \begin{aligned}
 \widehat I(x,y)={}&(1-t_x)(1-t_y)I[i,j]\\
 &+t_x(1-t_y)I[i+1,j]\\
 &+(1-t_x)t_yI[i,j+1]\\
 &+t_xt_yI[i+1,j+1].
 \end{aligned}
-$
+$$
 
 This is a weighted average of the four corners of the containing cell. It is a linear operator with respect to the pixel values, although its polynomial expression contains the coordinate product $xy$; “bilinear” does not mean a single plane in the two coordinates. The reconstructed surface is continuous, but its first derivatives can jump at grid lines. Bilinear is inexpensive and stable, but its triangular kernel attenuates high spatial frequencies, so enlarged images can look soft.
 
@@ -223,22 +223,22 @@ This is a weighted average of the four corners of the containing cell. It is a l
 
 Keys derived a piecewise cubic convolution kernel. In normalized coordinates $r=|x|$, its one-dimensional form is
 
-$
+$$
  K_a(x)=
  \begin{cases}
  (a+2)r^3-(a+3)r^2+1,&0\le r<1,\\
  ar^3-5ar^2+8ar-4a,&1\le r<2,\\
  0,&r\ge2.
  \end{cases}
-$
+$$
 
 Keys obtains this family by imposing symmetry, compact support, interpolation at integer nodes, continuity constraints, and accuracy conditions. A Taylor-series argument selects $a=-\tfrac12$ for third-order convergence in the paper's construction; this parameter is often associated with Catmull–Rom cubic convolution. Other values are used by real libraries, producing visibly and numerically different results.
 
 The two-dimensional separable form is
 
-$
+$$
  K_a^{(2D)}(x,y)=K_a(x)K_a(y).
-$
+$$
 
 It can preserve more detail than bilinear interpolation, but negative portions of the kernel can create overshoot or undershoot near high-contrast edges (ringing/halos).
 
@@ -246,7 +246,7 @@ It can preserve more detail than bilinear interpolation, but negative portions o
 
 Mitchell and Netravali studied a two-parameter family of piecewise cubic reconstruction filters, commonly parameterized by $B$ and $C$. One common expression is
 
-$
+$$
 K_{B,C}(x)=\frac{1}{6}
 \begin{cases}
 (12-9B-6C)r^3+(-18+12B+6C)r^2+(6-2B),&0\le r<1,\\
@@ -254,7 +254,7 @@ K_{B,C}(x)=\frac{1}{6}
 \quad+(-12B-48C)r+(8B+24C),&1\le r<2,\\
 0,&r\ge2.
 \end{cases}
-$
+$$
 
 Different parameter choices trade blur, ringing, and alias rejection. The paper's well-known compromise is $(B,C)=(\tfrac13,\tfrac13)$; other choices include cubic B-spline-like smoothing and sharper Catmull–Rom-like interpolation. The paper emphasizes that filters should be judged not only by their fit at sample points but also by their frequency response and visible artifacts.
 
@@ -264,20 +264,20 @@ A spline is a piecewise polynomial whose segments join with prescribed smoothnes
 
 A centred B-spline of degree $n$ is the $(n+1)$-fold convolution of a unit-width box function:
 
-$
+$$
  \beta^n=\underbrace{\beta^0*\beta^0*\cdots*\beta^0}_{n+1\text{ factors}}.
-$
+$$
 
 The cubic B-spline basis function is
 
-$
+$$
 \beta^3(x)=
 \begin{cases}
 \frac23-|x|^2+\frac{|x|^3}{2},&0\le|x|<1,\\[3pt]
 \frac{(2-|x|)^3}{6},&1\le|x|<2,\\[3pt]
 0,&|x|\ge2.
 \end{cases}
-$
+$$
 
 A crucial distinction: the cubic B-spline basis is smooth and compactly supported, but it is **not interpolating**. If raw pixel samples are used directly as B-spline coefficients, the reconstructed spline generally does not pass exactly through the pixels; it is a smoothed approximation. To obtain an exact interpolating spline, one must first calculate coefficients by inverting the discrete sampling relation. In practice this is implemented by a digital prefilter, often using efficient recursive causal and anti-causal filters rather than explicitly inverting a large matrix.
 
@@ -287,13 +287,13 @@ This explains why “cubic B-spline interpolation” is not the same method as K
 
 The Lanczos kernel is a windowed sinc. With radius $a>0$,
 
-$
+$$
  K_{L,a}(x)=
  \begin{cases}
  \operatorname{sinc}(x)\operatorname{sinc}(x/a),&|x|<a,\\
  0,&|x|\ge a.
  \end{cases}
-$
+$$
 
 Lanczos-3 uses $a=3$; in one dimension the kernel has finite radius three, and a separable two-dimensional version applies it along both axes. The window truncates the infinite sinc while retaining much of its frequency-selective behaviour. A wider support follows the ideal sinc more closely but requires more work. Oscillatory side lobes can cause ringing around high-contrast edges, especially when a sharp dark-to-light transition is present.
 
@@ -303,10 +303,10 @@ Pillow describes Lanczos as a truncated sinc. ImageMagick's resampling guide exp
 
 When shrinking an image, a destination pixel covers a region of the source image. An area method estimates the average value over that source footprint:
 
-$
+$$
  I_{out}[p,q]\approx\frac{1}{|A_{pq}|}
  \int_{A_{pq}} I(x,y)\,dx\,dy.
-$
+$$
 
 Under a piecewise-constant source-pixel model, the integral can be evaluated by summing each source pixel value multiplied by the area of overlap between its square and the destination footprint. In a separable axis-aligned resize, overlap weights can be computed independently in x and y. This makes area resampling especially natural for reduction. It is not simply another name for bilinear or bicubic interpolation; it integrates a footprint rather than evaluating a local point estimate.
 
@@ -316,21 +316,21 @@ Under a piecewise-constant source-pixel model, the integral can be evaluated by 
 
 Suppose an image is reduced by a linear scale factor $s<1$. The output grid has a lower Nyquist limit. Frequencies that were representable in the source may lie above the output Nyquist limit. If they are sampled without filtering, they fold into lower frequencies and become aliasing. Therefore the correct conceptual sequence is
 
-$
+$$
  \text{low-pass filter}\;\longrightarrow\;\text{sample on the coarser grid}.
-$
+$$
 
 A useful mathematical model is
 
-$
+$$
  I_{out}[m,n]=(I_{in}*h_s)(m/s,n/s),
-$
+$$
 
 where $h_s$ removes frequencies that cannot be represented on the output grid. In one dimension, scaling a reconstruction kernel to the reduced sampling rate gives a broadened filter of the form
 
-$
+$$
  K_s(x)=sK(sx),\qquad 0<s<1,
-$
+$$
 
 with corresponding normalization. Its support in source-pixel coordinates grows by $1/s$. For example, reducing by a factor of four should combine information from a substantially wider source neighbourhood than enlarging by four. In two dimensions with possibly different axis scales, use the corresponding axis-specific widened kernels.
 
@@ -342,9 +342,9 @@ The ideal low-pass filter is a rectangular response in the Fourier domain and a 
 
 A finite binomial filter such as
 
-$
+$$
  [1,2,1]/4
-$
+$$
 
 is inexpensive and gives useful smoothing, but it is not an ideal brick-wall filter. A stronger binomial kernel such as $[1,4,6,4,1]/16$ attenuates more high frequency detail and may over-smooth. The right anti-alias strength depends on the reduction factor and the content.
 
@@ -360,9 +360,9 @@ A robust implementation generally uses **inverse mapping**: loop over destinatio
 
 For a general transform $\mathbf x_s=\Phi(\mathbf x_d)$, the local Jacobian
 
-$
+$$
  J=\frac{\partial\Phi}{\partial\mathbf x_d}
-$
+$$
 
 describes how a small destination pixel footprint maps into the source. Under non-uniform scale or shear, that footprint is generally an ellipse, not a circle or axis-aligned square. A single fixed isotropic kernel can therefore be inadequate. Elliptical weighted average (EWA) resampling uses a spatially varying elliptical footprint; Heckbert's Berkeley technical report is a foundational treatment of filtering for arbitrary texture mappings and image warps. MIP mapping and image pyramids are practical multiscale approaches for selecting appropriately prefiltered source levels when a texture is minified.
 
@@ -374,15 +374,15 @@ Two functions both called “bicubic” or “Lanczos” may return different pi
 
 Let the source length be $S$ and destination length be $D$. One common half-pixel mapping is
 
-$
+$$
  x_s(j)=\left(j+\frac12\right)\frac{S}{D}-\frac12.
-$
+$$
 
 Another convention aligns the first and last pixel centres:
 
-$
+$$
  x_s(j)=j\frac{S-1}{D-1},
-$
+$$
 
 when the dimensions make this expression meaningful. These conventions differ, particularly for small dimensions and non-integer scale factors. The resampling result can shift or stretch by fractions of a pixel. SciPy exposes a related distinction through `grid_mode`: it can scale centre-to-centre distances or the full pixel extent. Record the convention explicitly.
 
@@ -402,9 +402,9 @@ The words `reflect` and `mirror` are not used consistently across libraries. Sci
 
 A kernel's support determines which source pixels contribute. For a downscale, that support should grow in source coordinates. Weights are commonly normalized so that
 
-$
+$$
  \sum_i w_i=1,
-$
+$$
 
 which preserves a constant image (partition of unity). At borders, some implementations truncate the kernel and renormalize; others include padded samples. This choice changes edge pixels.
 
@@ -434,15 +434,15 @@ Edge-directed methods estimate local orientation or local statistics and adapt t
 
 A generic local linear predictor can be written as
 
-$
+$$
  \widehat y=\mathbf w^T\mathbf x,
-$
+$$
 
 where $\mathbf x$ contains known neighbourhood values. In a minimum-mean-square-error/Wiener setting, coefficients are related to covariance matrices, for example
 
-$
+$$
  \mathbf w=\mathbf R_{xx}^{-1}\mathbf r_{xy},
-$
+$$
 
 when the inverse exists (or a regularized/pseudoinverse version is used). This connects adaptive interpolation to statistical estimation and linear prediction. NEDI's specific covariance estimation and geometric-duality construction should be read in the original paper rather than reduced to this generic formula.
 
@@ -484,17 +484,17 @@ Let the reference image be $I$, reconstruction be $\widehat I$, and there be $N$
 
 **Mean squared error (MSE)**
 
-$
+$$
  \operatorname{MSE}=\frac1N\sum_{n=1}^N(I_n-\widehat I_n)^2.
-$
+$$
 
 Lower is better. MSE is mathematically simple but treats all sample errors independently and equally.
 
 **Peak signal-to-noise ratio (PSNR)**
 
-$
+$$
  \operatorname{PSNR}=10\log_{10}\left(\frac{L^2}{\operatorname{MSE}}\right)\;\mathrm{dB},
-$
+$$
 
 where $L$ is the maximum possible sample value (255 for ordinary 8-bit samples, or 1 for normalized floating-point data). Higher is better; an exact match yields infinite PSNR. PSNR is a logarithmic restatement of MSE, not an independent perceptual model.
 
@@ -502,11 +502,11 @@ where $L$ is the maximum possible sample value (255 for ordinary 8-bit samples, 
 
 SSIM compares local luminance, contrast, and structure. A commonly used combined form is
 
-$
+$$
  \operatorname{SSIM}(x,y)=
  \frac{(2\mu_x\mu_y+C_1)(2\sigma_{xy}+C_2)}
  {(\mu_x^2+\mu_y^2+C_1)(\sigma_x^2+\sigma_y^2+C_2)},
-$
+$$
 
 where $\mu_x,\mu_y$ are local means, $\sigma_x^2,\sigma_y^2$ local variances, and $\sigma_{xy}$ local covariance. Constants stabilize the expression near zero denominators. The original SSIM paper develops this structural approach as a complement to error-visibility models. Values closer to one indicate greater structural similarity under the chosen implementation and settings.
 
