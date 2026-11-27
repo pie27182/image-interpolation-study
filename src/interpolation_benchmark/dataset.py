@@ -72,13 +72,13 @@ def discover_div2k_pairs(data_root: str | Path, scale: int = 4) -> list[ImagePai
         )
 
     hr_by_id: dict[str, Path] = {}
-    for path in hr_dir.glob("*.png"):
+    for path in hr_dir.rglob("*.png"):
         if re.fullmatch(r"\d{4}", path.stem):
             hr_by_id[path.stem] = path
 
     lr_by_id: dict[str, Path] = {}
     pattern = re.compile(rf"(\d{{4}})x{scale}")
-    for path in lr_dir.glob("*.png"):
+    for path in lr_dir.rglob("*.png"):
         match = pattern.fullmatch(path.stem)
         if match:
             lr_by_id[match.group(1)] = path
