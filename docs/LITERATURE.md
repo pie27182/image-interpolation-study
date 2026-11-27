@@ -101,3 +101,12 @@
     Очень свежая журнальная работа, предлагающая ADEPT — edge-aware адаптивный алгоритм, выбирающий направления интерполяции по локальным градиентам. В abstract авторы приводят сравнение с классическими signal-processing и learning-based методами и используют PSNR, SSIM, VMAF, субъективную оценку и perceptual metrics. Это пример современного направления за пределами фиксированных separable kernels. В ходе поиска не удалось подтвердить доступный официальный открытый код авторов; поэтому ADEPT не включён в исполняемую таблицу методов и не подменяется самодельной реализацией.
 
 Эти две работы добавляют прикладную и самую свежую часть обзора: ICVES показывает связь ресэмплинга с downstream machine vision, а IEEE TMM 2026 — развитие адаптивной edge-aware интерполяции. В основном эксперименте при этом оставлены только готовые, проверяемые фильтры Pillow, чтобы сохранить одинаковый исполняемый интерфейс и не превращать ВКР в задачу самостоятельной реализации нового алгоритма.
+
+
+17. Noguchi, C., Fukuda, S., Yamanaka, M. “Scene Text Image Super-resolution Based on Text-conditional Diffusion Models.” Proceedings of the IEEE/CVF Winter Conference on Applications of Computer Vision (WACV), 2024, pp. 1485–1495. https://openaccess.thecvf.com/content/WACV2024/papers/Noguchi_Scene_Text_Image_Super-Resolution_Based_on_Text-Conditional_Diffusion_Models_WACV_2024_paper.pdf
+
+    Работа Toyota по super-resolution для сценического текста. В статье показано, что цель text-image restoration — не только визуально приблизить HR, но и сохранить текстовую информацию для последующего распознавания. Материал Toyota дополнительно указывает на применимость к дорожным знакам и символам автомобильных номеров. Метод diffusion-based и не входит в основной набор фиксированных интерполяционных фильтров; его используем как обоснование отдельного OCR-эксперимента.
+
+18. Park, S. et al. “NCAP: Scene Text Image Super-Resolution with Non-Categorical Prior.” IEEE/CVF Winter Conference on Applications of Computer Vision (WACV), 2025. Открытая версия: https://openaccess.thecvf.com/content/WACV2025/papers/Park_NCAP_Scene_Text_Image_Super-Resolution_with_Non-Categorical_Prior_WACV_2025_paper.pdf
+
+    Ещё один недавний пример специализированного восстановления текста. Подтверждает, что scene-text SR — отдельная актуальная исследовательская линия, отличная от фиксированных kernels вроде Lanczos или Bicubic.
