@@ -110,3 +110,10 @@
 18. Park, S. et al. “NCAP: Scene Text Image Super-Resolution with Non-Categorical Prior.” IEEE/CVF Winter Conference on Applications of Computer Vision (WACV), 2025. Открытая версия: https://openaccess.thecvf.com/content/WACV2025/papers/Park_NCAP_Scene_Text_Image_Super-Resolution_with_Non-Categorical_Prior_WACV_2025_paper.pdf
 
     Ещё один недавний пример специализированного восстановления текста. Подтверждает, что scene-text SR — отдельная актуальная исследовательская линия, отличная от фиксированных kernels вроде Lanczos или Bicubic.
+
+
+## Дополнительный журнальный источник по протоколу сравнения
+
+19. Dumitrescu, D., Boiangiu, C.-A. “A Study of Image Upsampling and Downsampling Filters.” Computers, 8(2), 2019, Article 30. DOI: https://doi.org/10.3390/computers8020030
+
+    Рецензируемое сравнительное исследование фильтров увеличения и уменьшения изображений. Авторы оценивают различные типы изображений, включая текст, фотографии, биологические и аэрофотоснимки, текстуры; применяют PSNR и SSIM/MSSIM и отдельно обсуждают ограничения пиксельных метрик для восприятия качества. Это хороший источник для обоснования выбора реальных разнотипных изображений и использования более одной метрики. DOI ведёт на открытую страницу издателя.
