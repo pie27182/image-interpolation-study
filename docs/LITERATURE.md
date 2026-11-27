@@ -88,3 +88,16 @@
 - Costella — авторский технический материал по MKS, не независимое peer-reviewed исследование.
 
 Для окончательного текста ВКР нужно оформить библиографию согласно требованиям кафедры, указать DOI и процитировать официальный DIV2K dataset paper. Проверить права на изображения по официальной странице DIV2K.
+
+
+## Недавние работы 2025–2026 годов и прикладной контекст
+
+15. Geever, D., Brophy, T., Shah, I. A., Ward, E., Deegan, B., Glavin, M., Jones, E. “Evaluation of Interpolation Methods for Image Downsampling in Automotive Computer Vision.” Proceedings of the 2025 IEEE International Conference on Vehicular Electronics and Safety (ICVES 2025), pp. 380–386. DOI: https://doi.org/10.1109/ICVES65691.2025.11376542
+
+    Особенно близкая к возможному прикладному интересу работа: авторы сравнивают bilinear, bicubic, nearest-neighbour, area и Lanczos4 при downsampling для автомобильного computer vision и оценивают последствия для CNN object detection. По опубликованному abstract влияние в большинстве случаев оказалось небольшим (менее 2% AP50), но RT-DETR был заметно чувствительнее. Ключевой вывод для данной ВКР: визуальные PSNR/SSIM и результат последующей модели — разные критерии, и при заявлении прикладного эффекта нужно измерять downstream task. Важно: эта работа исследует downsampling, тогда как основной DIV2K эксперимент данного проекта — upsampling ×4.
+
+16. Mirzaei, S., Nasiopoulos, P., Plataniotis, K., Tohidypour, H. R. “An Adaptive All-Directional Edge-Aware Interpolation for High-Fidelity Image Resizing.” IEEE Transactions on Multimedia, Early Access, published 21 August 2026. DOI: https://doi.org/10.1109/TMM.2026.3726267
+
+    Очень свежая журнальная работа, предлагающая ADEPT — edge-aware адаптивный алгоритм, выбирающий направления интерполяции по локальным градиентам. В abstract авторы приводят сравнение с классическими signal-processing и learning-based методами и используют PSNR, SSIM, VMAF, субъективную оценку и perceptual metrics. Это пример современного направления за пределами фиксированных separable kernels. В ходе поиска не удалось подтвердить доступный официальный открытый код авторов; поэтому ADEPT не включён в исполняемую таблицу методов и не подменяется самодельной реализацией.
+
+Эти две работы добавляют прикладную и самую свежую часть обзора: ICVES показывает связь ресэмплинга с downstream machine vision, а IEEE TMM 2026 — развитие адаптивной edge-aware интерполяции. В основном эксперименте при этом оставлены только готовые, проверяемые фильтры Pillow, чтобы сохранить одинаковый исполняемый интерфейс и не превращать ВКР в задачу самостоятельной реализации нового алгоритма.
